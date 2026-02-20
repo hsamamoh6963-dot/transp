@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
+
+{% block title %}مركز التقارير التحليلية{% endblock %}
+
+{% block content %}
+<div class="reports-dashboard">
+    <div class="reports-header mb-4">
+        <h2 class="fw-bold"><i class="fas fa-chart-line text-primary me-2"></i> مركز التحليلات والتقارير</h2>
+        <p class="text-muted">استخراج وتحليل بيانات الوقود، الرحلات، والحوادث الميدانية</p>
+    </div>
+
+    <div class="filter-section shadow-sm">
+        <form method="GET" action="{% url 'report_center' %}" class="report-form">
+            <div class="filter-grid">
+                <div class="filter-item large">
+                    <label><i class="fas fa-list-alt"></i> نوع التقرير</label>
+                    <select name="report_type" required>
+                        <option value="">-- اختر نوع التحليل --</option>
+                        <optgroup label="الوقود والتموين">
+                            <option value="fuel" {% if request.GET.report_type == 'fuel' %}selected{% endif %}>تقرير استهلاك الوقود التفصيلي</option>
+                            <option value="over_consumption" {% if request.GET.report_type == 'over_consumption' %}selected{% endif %}>تجاوز الحصة (أكثر من 90%)</option>
+                            <option value="unused_quota" {% if request.GET.report_type == 'unused_quota' %}selected{% endif %}>حصص غير مستخدمة (توفير الموارد)</option>
+                        </optgroup>
+                        <optgroup label="العمليات الميدانية">
+                            <option value="trips" {% if request.GET.report_type == 'trips' %}selected{% endif %}>إحصائيات النشاط والوجهات</option>
+                        </optgroup>
+                        <optgroup label="الأصول والصيانة">
+                            <option value="accidents" {% if request.GET.report_type == 'accidents' %}selected{% endif %}>ملخص تكاليف الحوادث</option>
+                            <option value="maintenance" {% if request.GET.report_type == 'maintenance' %}selected{% endif %}>المركبات العالقة في الصيانة</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label><i class="fas fa-calendar-alt"></i> من تاريخ</label>
+                    <input type="date" name="start_date" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-calendar-check"></i> إلى تاريخ</label>
+                    <input type="date" name="end_date" value="{{ request.GET.end_date }}">
+                </div>
+
+                <div class="filter-item">
+                    <label><i class="fas fa-user-shield"></i> الموظف</label>
+                    <select name="employee">
+                        <option value="">كل الموظفين</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"i" %}selected{% endif %}>{{ emp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-car"></i> المركبة</label>
+                    <select name="vehicle">
+                        <option value="">كل المركبات</option>
+                        {% for veh in vehicles %}
+                        <option value="{{ veh.id }}" {% if request.GET.vehicle == veh.id|stringformat:"i" %}selected{% endif %}>{{ veh.plate_number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="submit" class="btn-generate"><i class="fas fa-sync"></i> توليد التقرير</button>
+                    <a href="{% url 'report_center' %}" class="btn-clear"><i class="fas fa-eraser"></i> مسح</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if filtered %}
+    <div class="results-section shadow">
+        <div class="results-toolbar">
+            <h4 class="m-0"><i class="fas fa-file-invoice text-primary me-2"></i> {{ report_title }}</h4>
+            <div class="export-actions">
+                <button class="btn-export pdf" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn-export excel" onclick="exportData('excel')"><i class="fas fa-file-excel"></i> Excel</button>
+                {% comment %} <button class="btn-export print" onclick="window.print()"><i class="fas fa-print"></i></button> {% endcomment %}
+            </div>
+        </div>
+
+        <div class="table-container mt-3">
+            <table class="modern-table">
+                <thead>
+                    {% if request.GET.report_type == 'fuel' %}
+                        <tr><th>التاريخ</th><th>الموظف</th><th>المركبة</th><th>الكمية</th><th>السبب</th></tr>
+                    {% elif request.GET.report_type == 'accidents' %}
+                        <tr><th>إجمالي الحوادث</th><th>إجمالي الخسائر</th><th>متوسط تكلفة الحادث</th></tr>
+                    {% elif request.GET.report_type == 'maintenance' %}
+                        <tr><th>المركبة</th><th>الورشة</th><th>تاريخ الدخول</th><th>تنبيه</th></tr>
+                    {% elif request.GET.report_type == 'over_consumption' %}
+                        <tr><th>الموظف</th><th>نسبة الاستهلاك</th><th>الرصيد المتبقي</th></tr>
+                    {% elif request.GET.report_type == 'unused_quota' %}
+                        <tr><th>الموظف</th><th>الرتبة</th><th>آخر نشاط</th></tr>
+                    {% elif request.GET.report_type == 'trips' %}
+                        <tr><th>إجمالي الرحلات</th><th>متوسط الرحلات/مركبة</th><th>الوجهات الأكثر تردداً</th></tr>
+                    {% endif %}
+                </thead>
+                <tbody>
+                    {% if request.GET.report_type == 'fuel' %}
+                        {% for item in report_results %}
+                        <tr>
+                            <td>{{ item.date|date:"Y-m-d" }}</td>
+                            <td class="fw-bold">{{ item.employee.name }}</td>
+                            <td>{{ item.vehicle.plate_number }}</td>
+                            <td class="text-primary fw-bold">{{ item.quantity }} لتر</td>
+                            <td>{{ item.notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% elif request.GET.report_type == 'accidents' %}
+                        <tr>
+                            <td>{{ report_results.accident_count }} حادث</td>
+                            <td class="text-danger fw-bold">{{ report_results.total_cost|default:"0.00" }} ر.س</td>
+                            <td>
+                                {% if report_results.accident_count > 0 %}
+                                    {% widthratio report_results.total_cost 1 report_results.accident_count %} ر.س
+                                {% else %}
+                                    0.00 ر.س
+                                {% endif %}
+                             </td>
+                        </tr>
+                    {% elif request.GET.report_type == 'trips' %}
+                        <tr>
+                            <td class="fs-5">{{ report_results.total_trips }} رحلة</td>
+                            <td class="fs-5">{{ report_results.avg_trips_per_vehicle|floatformat:1 }}</td>
+                            <td>
+                                {% for dest in report_results.top_destinations %}
+                                <span class="badge bg-light text-dark border">{{ dest.area }} ({{ dest.count }})</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% elif request.GET.report_type == 'over_consumption' %}
+                        {% for item in report_results %}
+                        <tr>
+                            <td>{{ item.employee }}</td>
+                            <td>
+                                <div class="progress" style="height: 10px; width: 150px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ item.consumption_pct }}%"></div>
+                                </div>
+                                <small>{{ item.consumption_pct }}%</small>
+                            </td>
+                            <td class="fw-bold">{{ item.remaining }} لتر</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+                </tbody>
+            </table>
+        </div>
+        
+        {% if report_results.has_other_pages %}
+        <div class="pagination-wrapper">
+             <a href="?page={{ report_results.previous_page_number }}&{{ request.GET.urlencode }}" class="{% if not report_results.has_previous %}disabled{% endif %}">السابق</a>
+             <span>صفحة {{ report_results.number }} من {{ report_results.paginator.num_pages }}</span>
+             <a href="?page={{ report_results.next_page_number }}&{{ request.GET.urlencode }}" class="{% if not report_results.has_next %}disabled{% endif %}">التالي</a>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state-card shadow-sm">
+        <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+        <h3>نظام التقارير الذكي جاهز</h3>
+        <p>قم بتحديد المعايير من اللوحة العلوية لعرض البيانات والتحليلات.</p>
+    </div>
+    {% endif %}
+</div>
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+    function exportData(type) {
+    const element = document.querySelector(".results-section"); // تحديد الجزء المراد تصديره فقط
+    const reportTitle = document.querySelector(".results-toolbar h4").innerText.trim();
+    const fileName = reportTitle + "_" + new Date().toISOString().slice(0, 10);
+
+    if (type === 'excel') {
+        // منطق تصدير Excel
+        const table = document.querySelector(".modern-table");
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Report" });
+        XLSX.writeFile(wb, fileName + ".xlsx");
+    } 
+    
+    else if (type === 'pdf') {
+        // منطق تصدير PDF احترافي للجزء المختار فقط
+        const opt = {
+            margin:       [10, 10, 10, 10],
+            filename:     fileName + ".pdf",
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // وضعية عرضية لتناسب الجداول
+        };
+
+        // إخفاء الأزرار مؤقتاً لكي لا تظهر في ملف الـ PDF
+        const buttons = document.querySelector(".export-actions");
+        buttons.style.display = 'none';
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            buttons.style.display = 'flex'; // إعادة إظهار الأزرار بعد انتهاء التوليد
+        });
+    }
+}
+
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+{% endblock %}

@@ -1,0 +1,308 @@
+/* --- إعدادات الحاوية الرئيسية --- */
+.reports-dashboard {
+    padding: 30px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    direction: rtl; /* يدعم الواجهة العربية */
+}
+
+.reports-header h2 {
+    color: #1e293b;
+    font-size: 1.75rem;
+}
+
+/* --- لوحة الفلاتر (Filter Section) --- */
+.filter-section {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* توزيع متساوي لثلاثة أعمدة */
+    gap: 25px;
+    align-items: end;
+}
+
+/* جعل حقل "نوع التقرير" يأخذ مساحة أكبر إذا أردت */
+.filter-item.large {
+    grid-column: span 1; 
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-item label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-item label i {
+    color: #3b82f6;
+}
+
+.filter-item select, 
+.filter-item input {
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background-color: #fcfcfc;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.filter-item select:focus, 
+.filter-item input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    background-color: #fff;
+}
+
+/* صف الأزرار داخل الجريد */
+.filter-buttons {
+    grid-column: span 3; /* تمدد الأزرار على كامل العرض */
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-generate {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-generate:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+
+.btn-clear {
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 12px 25px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.3s;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-clear:hover {
+    background: #e2e8f0;
+}
+
+/* --- منطقة النتائج (Results Section) --- */
+.results-section {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 30px;
+    border: 1px solid #e2e8f0;
+}
+
+.results-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.results-toolbar h4 {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* --- الجداول (Modern Table) --- */
+.table-container {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.modern-table thead tr {
+    background-color: #f8fafc;
+}
+
+.modern-table th {
+    padding: 16px;
+    text-align: right;
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+.modern-table tr:hover {
+    background-color: #fbfcfe;
+}
+
+/* --- أزرار التصدير --- */
+.export-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-export {
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 1.1rem;
+}
+
+.btn-export.pdf { background: #fee2e2; color: #ef4444; }
+.btn-export.excel { background: #dcfce7; color: #22c55e; }
+.btn-export.print { background: #f1f5f9; color: #64748b; }
+
+.btn-export:hover { transform: scale(1.1); }
+
+/* --- أشرطة التقدم (Progress Bars) --- */
+.progress {
+    background-color: #f1f5f9;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 20px;
+}
+
+/* --- الترقيم (Pagination) --- */
+.pagination-wrapper {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.pagination-wrapper a {
+    padding: 8px 20px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.pagination-wrapper a.disabled {
+    color: #cbd5e1;
+    pointer-events: none;
+}
+
+/* --- الحالة الفارغة (Empty State) --- */
+.empty-state-card {
+    text-align: center;
+    padding: 100px 20px;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #e2e8f0;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+/* التوافق مع الجوال */
+@media (max-width: 992px) {
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .filter-buttons { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    .filter-buttons { grid-column: span 1; }
+}
+/* --- جزء الطباعة --- */
+@media print {
+    /* إخفاء الفلاتر، الأزرار، رأس الصفحة، والناف بار */
+    .filter-section, .reports-header, .export-actions, .btn-clear, .btn-generate, .navbar, .sidebar, .pagination-wrapper {
+        display: none !important;
+    }
+    
+    /* جعل منطقة النتائج تأخذ كامل الصفحة */
+    .reports-dashboard, .results-section {
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .modern-table {
+        width: 100% !important;
+        border: 1px solid #000 !important;
+    }
+    
+    /* إظهار عنوان التقرير بشكل بارز في الطباعة */
+    .results-toolbar h4 {
+        text-align: center;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+/* تنسيقات خاصة تظهر فقط أثناء عملية التصدير والطباعة */
+.results-section {
+    background-color: white !important;
+}
+
+/* تحسين شكل الجدول في ملفات PDF */
+.modern-table th, .modern-table td {
+    border: 1px solid #eee !important;
+}
+
+/* إخفاء الترقيم في التصدير لأنه لا يعمل في ملف ثابت */
+@media print {
+    .pagination-wrapper, .btn-clear, .btn-generate {
+        display: none !important;
+    }
+}

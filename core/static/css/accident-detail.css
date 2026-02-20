@@ -1,0 +1,154 @@
+/* تنسيق صفحة تفاصيل الحادث المتوافق مع base.html */
+
+/* إلغاء أي تقييد للعرض ليتناسب مع الـ content-area */
+.accident-detail-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    direction: rtl;
+}
+
+/* البطاقة الرئيسية */
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* الترويسة باستخدام ألوان الـ base */
+.detail-card-header {
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-card-header.bg-dark { background: var(--secondary-color); color: white; }
+.detail-card-header.bg-primary { background: var(--primary-color); color: white; }
+
+.detail-card-header h4, .detail-card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* زر العودة */
+.btn-back-link {
+    color: white;
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 6px 15px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 5px;
+    transition: 0.3s;
+}
+.btn-back-link:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-color); }
+
+/* شبكة البيانات - الحل الحاسم لمشكلة تراكم النصوص */
+.info-grid-row {
+    display: flex; /* تحويل التوزيع إلى صفوف مرنة */
+    flex-wrap: wrap; /* السماح بالانتقال لسطر جديد في الشاشات الصغيرة */
+    padding: 25px;
+    gap: 20px;
+}
+
+.info-column {
+    flex: 1; /* جعل الأعمدة تأخذ مساحة متساوية */
+    min-width: 300px; /* ضمان عدم انضغاط العمود الواحد */
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #7f8c8d;
+    margin-left: 15px;
+}
+
+.detail-item span {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* اللوحة والتكلفة */
+.plate-badge {
+    background: #f1f3f5;
+    border: 2px solid var(--primary-color);
+    padding: 2px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.cost-text {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* حالة الملف */
+.status-pill {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+.status-pill.open { background: #fff5f5; color: #e74c3c; }
+.status-pill.closed { background: #f6ffed; color: #389e0d; }
+
+/* وصف الحادث */
+.description-section {
+    padding: 0 25px 25px;
+}
+
+.description-section h5 {
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+
+.description-content {
+    background: var(--bg-light);
+    border-right: 4px solid var(--primary-color);
+    padding: 15px;
+    border-radius: 4px;
+    line-height: 1.7;
+    color: #444;
+}
+
+/* جدول التاريخ التاريخي */
+.custom-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.custom-history-table th {
+    background: #f8f9fa;
+    padding: 15px 25px;
+    color: #666;
+    text-align: right;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.custom-history-table td {
+    padding: 15px 25px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.status-dot {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+}
+.status-dot.open { background: #e74c3c; }
+.status-dot.closed { background: #2ecc71; }

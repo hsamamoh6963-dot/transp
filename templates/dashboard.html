@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+
+{% block title %}لوحة القيادة والتحكم{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-tachometer-alt"></i> مركز القيادة والسيطرة</h2>
+        <div class="text-start">
+            <span class="badge bg-light text-dark shadow-sm p-2">
+                <i class="fas fa-sync-alt fa-spin me-1"></i> آخر تحديث: {{ last_updated|date:"H:i" }}
+            </span>
+        </div>
+    </div>
+
+    <div class="summary-grid mb-4">
+        <div class="stat-card green">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-data">
+                <h3>{{ stats.total_employees }}</h3>
+                <p>الموظفين النشطين</p>
+            </div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-icon"><i class="fas fa-car"></i></div>
+            <div class="stat-data">
+                <h3>{{ stats.active_vehicles }} / {{ stats.total_vehicles }}</h3>
+                <p>المركبات النشطة</p>
+            </div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-icon"><i class="fas fa-route"></i></div>
+            <div class="stat-data">
+                <h3>{{ stats.trips_this_month }}</h3>
+                <p>رحلات الشهر</p>
+            </div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-icon"><i class="fas fa-car-crash"></i></div>
+            <div class="stat-data">
+                <h3>{{ stats.open_accidents }}</h3>
+                <p>حوادث مفتوحة</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="analysis-row">
+        <div class="info-card fuel-card shadow-sm">
+            <div class="card-title"><i class="fas fa-gas-pump text-primary"></i> مراقبة استهلاك الوقود</div>
+            <div class="card-body">
+                <div class="main-metric">
+                    <span class="value">{{ fuel.monthly_issued|floatformat:1 }}</span>
+                    <span class="label">لتر مصروف هذا الشهر</span>
+                </div>
+                <div class="sub-details">
+                    {% if fuel.top_employee %}
+                    <div class="detail-item">
+                        <i class="fas fa-user-tag text-primary"></i>
+                        <span>الأكثر استهلاكاً (موظف): <strong>{{ fuel.top_employee.employee__name }}</strong></span>
+                    </div>
+                    {% endif %}
+                    {% if fuel.top_vehicle %}
+                    <div class="detail-item">
+                        <i class="fas fa-truck-pickup text-info"></i>
+                        <span>الأكثر استهلاكاً (مركبة): <strong>{{ fuel.top_vehicle.vehicle__plate_number }}</strong></span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card finance-card shadow-sm">
+            <div class="card-title text-danger"><i class="fas fa-money-bill-trend-up"></i> الخسائر والتكاليف</div>
+            <div class="card-body">
+                <div class="finance-list">
+                    <div class="fin-row">
+                        <span>تكاليف الحوادث:</span>
+                        <span class="val fw-bold">{{ finance.monthly_accident_costs|floatformat:2 }} ر.س</span>
+                    </div>
+                    <div class="fin-row">
+                        <span>تكاليف الصيانة:</span>
+                        <span class="val fw-bold">{{ finance.monthly_maintenance_costs|floatformat:2 }} ر.س</span>
+                    </div>
+                    <div class="fin-row total-row mt-3">
+                        <span>إجمالي الخسائر المباشرة:</span>
+                        <span class="val fw-bold">{{ finance.total_losses|floatformat:2 }} ر.س</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="visual-row mt-4">
+        <div class="chart-wrapper shadow-sm">
+            <div class="card-title"><i class="fas fa-chart-line text-success"></i> منحنى الأداء الاستهلاكي</div>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="alerts-wrapper shadow-sm">
+            <div class="card-title"><i class="fas fa-bell text-warning"></i> التنبيهات الميدانية</div>
+            <div class="alerts-content">
+                {% for emp in alerts.low_balance_employees %}
+                <div class="alert-box warning">
+                    <i class="fas fa-battery-quarter"></i>
+                    <span>رصيد منخفض: <strong>{{ emp.name }}</strong> ({{ emp.balance|floatformat:1 }} ل)</span>
+                </div>
+                {% empty %}
+                <div class="alert-box success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>جميع الأرصدة فوق الحد الحرج.</span>
+                </div>
+                {% endfor %}
+
+                {% if alerts.long_running_trips > 0 %}
+                <div class="alert-box info">
+                    <i class="fas fa-clock"></i>
+                    <span>يوجد <strong>{{ alerts.long_running_trips }}</strong> رحلة/دورية نشطة حالياً.</span>
+                </div>
+                {% endif %}
+                
+                {% if stats.pending_maintenance > 0 %}
+                <div class="alert-box danger">
+                    <i class="fas fa-tools"></i>
+                    <span>يوجد <strong>{{ stats.pending_maintenance }}</strong> مركبات في انتظار الصيانة.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions-bar mt-4 shadow-sm">
+        <h4 class="mb-3 fs-5 fw-bold"><i class="fas fa-bolt text-warning"></i> اختصارات العمليات:</h4>
+        <div class="action-buttons d-flex flex-wrap gap-2">
+            <a href="{% url 'trip_list' %}" class="btn btn-primary"><i class="fas fa-plus"></i> فتح رحلة</a>
+            <a href="{% url 'fuel_log_list' %}" class="btn btn-success"><i class="fas fa-gas-pump"></i> صرف وقود</a>
+            <a href="{% url 'accident_list' %}" class="btn btn-danger"><i class="fas fa-car-crash"></i> بلاغ حادث</a>
+            <a href="{% url 'maintenance_dashboard' %}" class="btn btn-secondary"><i class="fas fa-wrench"></i> لوحة الصيانة</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4'],
+                datasets: [{
+                    label: 'الاستهلاك الأسبوعي',
+                    data: [
+                        {{ fuel.monthly_issued|default:0 }} * 0.2, 
+                        {{ fuel.monthly_issued|default:0 }} * 0.35, 
+                        {{ fuel.monthly_issued|default:0 }} * 0.15, 
+                        {{ fuel.monthly_issued|default:0 }} * 0.3
+                    ],
+                    borderColor: '#48bb78',
+                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#fff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [5, 5], color: '#f1f1f1' } 
+                    },
+                    x: { 
+                        grid: { display: false } 
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

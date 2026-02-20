@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/fuel_style.css' %}">
+{% endblock %}
+
+{% block title %}سجل وعمليات الوقود{% endblock %}
+
+{% block content %}
+
+
+<div class="fuel-container">
+    
+    <div class="summary-grid">
+        <div class="stat-card cyan"> <div class="stat-icon"><i class="fas fa-gas-pump"></i></div>
+            <div class="stat-data">
+                <p>إجمالي الصرف (هذا الشهر)</p>
+                <h3>{{ fuel_stats.monthly_issued|floatformat:1 }} لتر</h3>
+            </div>
+        </div>
+        <div class="stat-card green"> <div class="stat-icon"><i class="fas fa-plus-circle"></i></div>
+            <div class="stat-data">
+                <p>عمليات الإيداع/التعديل</p>
+                <h3>{{ fuel_stats.total_additions|default:"0" }}</h3>
+            </div>
+        </div>
+        <div class="stat-card blue"> <div class="stat-icon"><i class="fas fa-user-tag"></i></div>
+            <div class="stat-data">
+                <p>أعلى استهلاك</p>
+                <h3>{{ fuel_stats.top_employee.employee__name|default:"-" }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <div class="filter-area">
+            <form method="GET" class="inline-filter">
+                <input type="date" name="start_date" value="{{ request.GET.start_date }}">
+                <select name="type">
+                    <option value="">كل العمليات</option>
+                    <option value="issue">صرف (Issue)</option>
+                    <option value="addition">إضافة (Addition)</option>
+                </select>
+                <button type="submit" class="btn-search"><i class="fas fa-filter"></i></button>
+            </form>
+        </div>
+        <div class="actions">
+            <button class="btn-primary" onclick="openModal('addFuelModal')">
+                <i class="fas fa-fill-drip"></i> تسجيل عملية وقود
+            </button>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <table class="main-table fuel-table">
+            <thead>
+                <tr>
+                    <th>رقم العملية</th>
+                    <th>التاريخ</th>
+                    <th>الموظف</th>
+                    <th>المركبة</th>
+                    <th>الكمية</th>
+                    <th>النوع</th>
+                    <th>السبب / الرحلة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr class="tx-row {{ tx.transaction_type }}">
+                    <td>#{{ tx.id }}</td>
+                    <td>{{ tx.date|date:"Y-m-d H:i" }}</td>
+                    <td><strong>{{ tx.employee.name }}</strong></td>
+                    <td>{{ tx.vehicle.plate_number }}</td>
+                    <td class="qty-cell">{{ tx.quantity }} لتر</td>
+                    <td>
+                        <span class="type-pill {{ tx.transaction_type }}">
+                            {% if tx.transaction_type == 'issue' %}صرف{% else %}إضافة{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ tx.notes|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div id="addFuelModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>تسجيل حركة وقود جديدة</h3>
+            <span class="close" onclick="closeModal('addFuelModal')">&times;</span>
+        </div>
+        <form method="POST" action="{% url 'fuel_add' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الموظف المستلم</label>
+                        <select name="employee" id="emp_select" onchange="checkBalance(this.value)" required>
+                            <option value="">اختر الموظف...</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.rank.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>المركبة</label>
+                        <select name="vehicle" required>
+                            {% for veh in vehicles %}
+                            <option value="{{ veh.id }}">{{ veh.plate_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="balance-preview">
+                    <div class="preview-item">
+                        <span>الرصيد الحالي:</span>
+                        <strong id="current_balance">0.00</strong>
+                    </div>
+                    <div class="preview-item">
+                        <span>الحصة الشهرية:</span>
+                        <strong id="monthly_limit">0.00</strong>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الكمية (لتر)</label>
+                        <input type="number" name="quantity" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع العملية</label>
+                        <select name="transaction_type">
+                            <option value="issue">صرف عهده</option>
+                            <option value="addition">تعديل رصيد (إضافة)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات / سبب التعديل</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-save-fuel">تأكيد العملية</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<button class="btn-primary" style="background-color: #f39c12;" onclick="openModal('adjustFuelModal')">
+    <i class="fas fa-tools"></i> تعديل إداري (استثناء)
+</button>
+
+<div id="adjustFuelModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" style="background: #e67e22;">
+            <h3><i class="fas fa-exclamation-triangle"></i> إجراء تعديل وقود إداري</h3>
+            <span class="close" onclick="closeModal('adjustFuelModal')">&times;</span>
+        </div>
+        <form method="POST" action="{% url 'fuel_adjustment' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع التعديل</label>
+                        <select name="adjustment_type" required>
+                            <option value="addition">إضافة رصيد (تصحيح عجز)</option>
+                            <option value="issue">سحب رصيد (تصحيح زيادة)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>الموظف المعني</label>
+                        <select name="employee" required>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>المركبة</label>
+                        <select name="vehicle" required>
+                            {% for veh in vehicles %}
+                            <option value="{{ veh.id }}">{{ veh.plate_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>الكمية المستهدفة</label>
+                        <input type="number" name="quantity" step="0.1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>سبب التعديل (إلزامي للرقابة)</label>
+                    <textarea name="reason" rows="3" placeholder="اشرح لماذا يتم هذا التعديل الإداري..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-save-fuel" style="background: #e67e22;">تنفيذ التعديل الرسمي</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    // إغلاق المودال عند الضغط خارجه
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+
+{% endblock %}

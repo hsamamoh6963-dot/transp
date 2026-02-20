@@ -1,0 +1,99 @@
+/* الإعدادات العامة */
+:root {
+    --sidebar-width: 260px;
+    --primary-color: #1a237e; /* كحلي رسمي */
+    --secondary-color: #283593;
+    --text-light: #ecf0f1;
+    --bg-light: #f4f7f6;
+    --border-color: #ddd;
+    --accent-color: #ffd600; /* أصفر للتنبيهات */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+body { display: flex; height: 100vh; background-color: var(--bg-light); overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s;
+}
+
+.sidebar-header {
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: var(--secondary-color);
+}
+
+.sidebar-nav { flex: 1; padding: 15px 0; overflow-y: auto; }
+.sidebar-nav ul { list-style: none; }
+.nav-label { padding: 15px 20px 5px; font-size: 12px; color: #9fa8da; text-transform: uppercase; }
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #c5cae9;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar-nav a i { margin-left: 15px; width: 20px; text-align: center; }
+.sidebar-nav a:hover, .sidebar-nav a.active { background: rgba(255,255,255,0.1); color: white; border-right: 4px solid var(--accent-color); }
+
+/* Main Wrapper */
+.main-wrapper { flex: 1; display: flex; flex-direction: column; }
+
+/* Navbar */
+.navbar {
+    height: 60px;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-left { display: flex; align-items: center; gap: 10px; }
+.user-info strong { color: var(--primary-color); }
+
+/* Content Area */
+.content-area { flex: 1; padding: 30px; overflow-y: auto; }
+
+/* Status Bar */
+.status-bar {
+    height: 30px;
+    background: #eee;
+    display: flex;
+    padding: 0 20px;
+    align-items: center;
+    font-size: 12px;
+    border-top: 1px solid var(--border-color);
+    gap: 20px;
+}
+
+.status-item i { margin-left: 5px; color: #666; }
+.online { color: green; font-weight: bold; }
+
+.btn-logout { background: #e74c3c; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; }
+
+
+
+
+
+
+
+
+
+
+
+
+

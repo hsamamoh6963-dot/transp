@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-container narrow">
+    
+    {% if rank %}
+    <div class="admin-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span><strong>تحذير إداري:</strong> أي تغيير في الحصص هنا سيؤثر فوراً على جميع الموظفين ({{ rank.employee_set.count }} فرد) الذين يعتمدون على حصة الرتبة الافتراضية.</span>
+    </div>
+    {% endif %}
+
+    <div class="form-header">
+        <h2>{% if rank %}تحديث سياسة رتبة {{ rank.name }}{% else %}إنشاء رتبة عسكرية جديدة{% endif %}</h2>
+    </div>
+
+    <form method="POST" class="styled-form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <div class="input-group">
+                <label>اسم الرتبة العسكرية</label>
+                <input type="text" name="name" value="{{ rank.name|default:'' }}" placeholder="مثال: نقيب، رائد..." required>
+            </div>
+
+            <div class="quota-config-box">
+                <div class="input-group">
+                    <label>الحصة الأسبوعية الافتراضية (لتر)</label>
+                    <input type="number" name="default_weekly_quota" step="0.1" value="{{ rank.default_weekly_quota|default:'0.0' }}" required>
+                </div>
+                <div class="input-group">
+                    <label>الحصة الشهرية الافتراضية (لتر)</label>
+                    <input type="number" name="default_monthly_quota" step="0.1" value="{{ rank.default_monthly_quota|default:'0.0' }}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-submit btn-full">
+                <i class="fas fa-save"></i> {% if rank %}اعتماد السياسة الجديدة{% else %}حفظ الرتبة الجديدة{% endif %}
+            </button>
+            <a href="{% url 'rank_list' %}" class="btn-cancel">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

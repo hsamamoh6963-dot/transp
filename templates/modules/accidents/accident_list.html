@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/accident.css' %}">
+{% endblock %}
+
+
+
+{% block title %}مركز إدارة الحوادث الشامل{% endblock %}
+
+{% block content %}
+<div class="accident-dashboard">
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-car-crash"></i></div>
+            <div class="stat-data">
+                <span>إجمالي الحوادث</span>
+                <h3>{{ accidents.count }}</h3>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-data">
+                <span>خسائر الأسطول الموثقة</span>
+                <h3>{{ total_damages|default:"0.0" }} <small>ر.س</small></h3>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-route"></i></div>
+            <div class="stat-data">
+                <span>رحلات قيد المراقبة</span>
+                <h3>{{ active_trips.count }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar shadow-sm">
+        <form method="GET" class="filter-group">
+            <input type="text" name="plate_number" placeholder="رقم اللوحة..." value="{{ request.GET.plate_number }}">
+            <input type="text" name="employee_name" placeholder="اسم الموظف..." value="{{ request.GET.employee_name }}">
+            <select name="status">
+                <option value="">كل الحالات</option>
+                <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>مفتوح</option>
+                <option value="closed" {% if request.GET.status == 'closed' %}selected{% endif %}>مغلق مالياً</option>
+            </select>
+            <button type="submit" class="btn-search"><i class="fas fa-filter"></i></button>
+        </form>
+        <button class="btn-add-accident" onclick="openModal('createAccidentModal')">
+            <i class="fas fa-plus-circle"></i> تسجيل حادث جديد
+        </button>
+    </div>
+
+    <div class="data-table-container shadow">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>رقم السجل</th>
+                    <th>المركبة</th>
+                    <th>الموظف</th>
+                    <th>التاريخ والوقت</th>
+                    <th>التكلفة (damage_cost)</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for acc in accidents %}
+                <tr>
+                    <td><strong>#{{ acc.id }}</strong></td>
+                    <td><span class="plate-text">{{ acc.vehicle.plate_number }}</span></td>
+                    <td>{{ acc.trip.employee.name }}</td>
+                    <td>{{ acc.date_occurred|date:"Y-m-d H:i" }}</td>
+                    <td>{{ acc.damage_cost }} ر.س</td>
+                    <td>
+                        <span class="status-badge {{ acc.status }}">
+                            {{ acc.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn-view" onclick="viewAccidentDetail('{{ acc.id }}')" title="عرض التفاصيل">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        {% if acc.status == 'open' %}
+                        <button class="btn-close-acc" onclick="openCloseAccidentModal('{{ acc.id }}')" title="إغلاق مالي">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty-state">لا توجد حوادث مسجلة حالياً</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="createAccidentModal" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header danger-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> توثيق حادث جديد</h3>
+            <span class="close" onclick="closeModal('createAccidentModal')">&times;</span>
+        </div>
+        <form method="POST" action="{% url 'accident_create' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>اختر الرحلة المرتبطة</label>
+                        <select name="trip" required>
+                            <option value="">-- الرحلات النشطة حالياً --</option>
+                            {% for trip in active_trips %}
+                            <option value="{{ trip.id }}">{{ trip.vehicle.plate_number }} | {{ trip.employee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>تاريخ ووقت الوقعة</label>
+                        <input type="datetime-local" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>التكلفة التقديرية الأولية (ر.س)</label>
+                        <input type="number" name="damage_cost" step="0.01" value="0.00">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>وصف دقيق للحادث</label>
+                        <textarea name="description" rows="3" placeholder="تفاصيل المكان والسبب..." required></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-confirm-danger">تسجيل الحادث وإخراج المركبة من الخدمة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="closeAccidentModal" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>إغلاق مالي للحادث #<span id="close_acc_id"></span></h3>
+            <span class="close" onclick="closeModal('closeAccidentModal')">&times;</span>
+        </div>
+        <form id="closeAccidentForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>التكلفة النهائية الفعلية للإصلاح</label>
+                    <input type="number" name="final_cost" step="0.01" required placeholder="أدخل المبلغ النهائي">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-save">اعتماد المبلغ وإغلاق الملف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function openCloseAccidentModal(accId) {
+        document.getElementById('close_acc_id').innerText = accId;
+        // تحديث الرابط ديناميكياً ليناسب الـ URL المسمى في Django
+        document.getElementById('closeAccidentForm').action = `/accidents/${accId}/close/`; 
+        openModal('closeAccidentModal');
+    }
+
+    function viewAccidentDetail(accId) {
+        // يمكنك توجيهه لصفحة منفصلة أو فتح Modal تفاصيل
+        window.location.href = `/accidents/${accId}/detail/`;
+    }
+</script>
+{% endblock %}

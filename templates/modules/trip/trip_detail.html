@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/trip_style.css' %}"> <link rel="stylesheet" href="{% static 'css/trip_style.css' %}"> 
+{% endblock %}
+
+{% block content %}
+<div class="fuel-container">
+    <div class="section-header">
+        <div>
+            <h2>تفاصيل الرحلة رقم #{{ trip.id }}</h2>
+            <p style="color: #7f8c8d;">{{ trip.area }} | {{ trip.start_date|date:"Y-m-d H:i" }}</p>
+        </div>
+        <div class="actions">
+            <a href="{% url 'trip_list' %}" class="btn-search" style="background:#95a5a6; color:white; text-decoration:none;">
+                <i class="fas fa-arrow-right"></i> العودة للقائمة
+            </a>
+            {% if not trip.end_date %}
+            <form method="POST" action="{% url 'trip_list' %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="close">
+                <input type="hidden" name="trip_id" value="{{ trip.id }}">
+                <button type="submit" class="btn-primary" style="background:#27ae60;">إغلاق الرحلة الآن</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+        
+        <div class="main-info">
+            <div class="data-card" style="padding: 20px; margin-bottom: 20px;">
+                <h3 class="modal-section-title"><i class="fas fa-info-circle"></i> البيانات الأساسية</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="info-item">
+                        <label style="color: #7f8c8d; font-size: 13px;">المركبة</label>
+                        <p><strong>{{ trip.vehicle.plate_number }}</strong> ({{ trip.vehicle.model }})</p>
+                    </div>
+                    <div class="info-item">
+                        <label style="color: #7f8c8d; font-size: 13px;">الموظف/السائق</label>
+                        <p><strong>{{ trip.employee.name }}</strong></p>
+                    </div>
+                    <div class="info-item">
+                        <label style="color: #7f8c8d; font-size: 13px;">نوع الرحلة</label>
+                        <p>{{ trip.trip_type }}</p>
+                    </div>
+                    <div class="info-item">
+                        <label style="color: #7f8c8d; font-size: 13px;">المدة المستغرقة</label>
+                        <p><span class="status-pill info">{{ duration }} ساعة</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-card" style="padding: 20px; border-right: 4px solid #f1c40f; margin-bottom: 20px;">
+                <h3 class="modal-section-title" style="color:#f39c12;"><i class="fas fa-gas-pump"></i> الوقود والحصة الممنوحة</h3>
+                {% if trip.fuel_transaction %}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p>تم صرف حصة قدرها: <strong>{{ trip.fuel_transaction.quantity }} لتر</strong></p>
+                        <small>كود المعاملة: #{{ trip.fuel_transaction.id }} | التاريخ: {{ trip.fuel_transaction.date|date:"Y-m-d" }}</small>
+                    </div>
+                    <a href="#" class="btn-search" style="border: 1px solid #f39c12; color: #f39c12;">تفاصيل السند</a>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 10px;">
+                    <p class="text-muted">لا توجد عملية وقود مسجلة لهذه الرحلة.</p>
+                    {% if not trip.end_date %}
+                    <button class="btn-primary" style="background: #f39c12; font-size: 13px;">تسجيل صرف يدوي</button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="data-card" style="padding: 20px; border-right: 4px solid #e74c3c;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="modal-section-title" style="color:#e74c3c; margin:0;"><i class="fas fa-car-crash"></i> سجل الحوادث</h3>
+                    {% if not trip.end_date %}
+                    <button class="btn-primary" style="background:#e74c3c; padding: 5px 12px; font-size: 12px;">تبليغ عن حادث</button>
+                    {% endif %}
+                </div>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوصف</th>
+                            <th>التكلفة التقديرية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acc in accidents %}
+                        <tr>
+                            <td>{{ acc.date_occurred|date:"Y-m-d" }}</td>
+                            <td>{{ acc.description|truncatechars:50 }}</td>
+                            <td>{{ acc.damage_cost }} $</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" style="text-align:center;">لم يتم تسجيل حوادث خلال هذه الرحلة بحمد الله.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="side-info">
+            <div class="data-card" style="padding: 20px;">
+                <h4 class="modal-section-title">الحالة الزمنية</h4>
+                <div class="timeline" style="border-right: 2px dashed #ddd; padding-right: 15px;">
+                    <div class="time-node">
+                        <small>وقت الانطلاق</small>
+                        <p><strong>{{ trip.start_date|date:"H:i" }}</strong></p>
+                        <p style="font-size: 11px;">{{ trip.start_date|date:"Y-m-d" }}</p>
+                    </div>
+                    <hr>
+                    <div class="time-node">
+                        <small>وقت العودة</small>
+                        {% if trip.end_date %}
+                        <p><strong>{{ trip.end_date|date:"H:i" }}</strong></p>
+                        <p style="font-size: 11px;">{{ trip.end_date|date:"Y-m-d" }}</p>
+                        {% else %}
+                        <p style="color: #3498db;">قيد التنفيذ...</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card-detail" style="margin-top: 20px; background: #ebf5ff; border-right-color: #3498db;">
+                <h4><i class="fas fa-lightbulb"></i> ملحوظة العمليات</h4>
+                <p style="font-size: 12px; color: #2c3e50;">
+                    عند إغلاق الرحلة، يتم تحويل حالة المركبة <strong>{{ trip.vehicle.plate_number }}</strong> تلقائياً إلى "نشطة" لتصبح متاحة لموظف آخر.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

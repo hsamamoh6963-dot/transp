@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/fuel_style.css' %}">
+    <style>
+        /* إضافة لمسات خاصة بصفحة المركبات لتشبه لوحة الصيانة */
+        .status-indicator.active { background-color: #2ecc71; }
+        .status-indicator.inactive { background-color: #95a5a6; }
+        .status-indicator.maintenance { background-color: #f1c40f; }
+        
+        .type-badge.company { background: #e8f4fd; color: #2980b9; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .type-badge.private { background: #fef9e7; color: #f39c12; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    </style>
+{% endblock %}
+
+{% block title %}إدارة أسطول المركبات{% endblock %}
+
+{% block content %}
+<div class="fuel-container"> <div class="summary-grid">
+        <div class="stat-card blue">
+            <div class="stat-icon"><i class="fas fa-car"></i></div>
+            <div class="stat-data">
+                <p>إجمالي الأسطول</p>
+                <h3>{{ vehicles.count }} مركبة</h3>
+            </div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-data">
+                <p>مركبات نشطة</p>
+                <h3>{{ active_count|default:"-" }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <div class="filter-area">
+            <form method="GET" class="inline-filter">
+                <input type="text" name="plate_search" placeholder="رقم اللوحة..." value="{{ request.GET.plate_search|default:'' }}">
+                
+                <select name="status">
+                    <option value="all" {% if request.GET.status == 'all' %}selected{% endif %}>عرض كل الحالات</option>
+                    
+                    <option value="active" {% if request.GET.status == 'active' or not request.GET.status %}selected{% endif %}>المركبات النشطة فقط</option>
+                    
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>المركبات غير النشطة</option>
+                    
+                   
+                </select>
+                
+                <button type="submit" class="btn-search"><i class="fas fa-search"></i> بحث وفلترة</button>
+                
+                <a href="{% url 'vehicle_list' %}" class="btn-search" style="background:#95a5a6; text-decoration:none; line-height:30px;">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </form>
+        </div>
+        <div class="actions">
+            <button class="btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> إضافة مركبة جديدة
+            </button>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th>رقم اللوحة</th>
+                    <th>نوع الملكية</th>
+                    <th>المالك/المسؤول</th>
+                    <th>السعة</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for veh in vehicles %}
+                <tr>
+                    <td><strong>{{ veh.plate_number }}</strong></td>
+                    <td>
+                        <span class="type-badge {{ veh.vehicle_type }}">
+                            {{ veh.get_vehicle_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ veh.owner.name|default:"المؤسسة" }}</td>
+                    <td>{{ veh.model }} نموذج السيارة </td>
+                    <td>
+                        <span class="status-pill {{ veh.status }}">
+                            <span class="status-indicator {{ veh.status }}"></span>
+                            {{ veh.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{% url 'vehicle_detail' veh.id %}" class="btn-search" title="عرض السجل">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn-search" style="background:#f39c12" 
+                                onclick="openEditModal('{{ veh.id }}', '{{ veh.plate_number }}', '{{ veh.fuel_capacity }}', '{{ veh.vehicle_type }}', '{{ veh.owner.id|default:'' }}', '{{ veh.status }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من تعطيل هذه المركبة؟');">
+                                {% csrf_token %}
+                                <input type="hidden" name="vehicle_id" value="{{ veh.id }}">
+                                <input type="hidden" name="action" value="deactivate">
+                                <button type="submit" class="btn-search" style="background:#e74c3c">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding: 30px;">لا توجد مركبات مسجلة حالياً.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="vehicleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">إضافة مركبة</h3>
+            <span class="close" onclick="closeModal('vehicleModal')">&times;</span>
+        </div>
+        <form method="POST" id="vehicleForm">
+            {% csrf_token %}
+            <input type="hidden" name="vehicle_id" id="modal_vehicle_id">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم اللوحة</label>
+                        <input type="text" name="plate_number" id="m_plate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>نموذج السيارة</label>
+                        <input type="text" name="model" id="model" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع الملكية</label>
+                        <select name="vehicle_type" id="m_type" onchange="toggleOwnerField()">
+                            <option value="company">مؤسسة (Company)</option>
+                            <option value="private">خاصة (Private)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="owner_field_wrapper">
+                        <label>المسؤول/السائق</label>
+                        <select name="owner" id="m_owner">
+                            <option value="">-- اختر موظفاً --</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الحالة التشغيلية</label>
+                    <select name="status" id="m_status">
+                        <option value="active">نشطة</option>
+                        <option value="inactive">غير نشطة</option>
+                        <option value="maintenance">تحت الصيانة</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-save-fuel">حفظ البيانات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function openAddModal() {
+        document.getElementById('vehicleForm').reset();
+        document.getElementById('modal_vehicle_id').value = '';
+        document.getElementById('modalTitle').innerText = 'إضافة مركبة جديدة للأسطول';
+        toggleOwnerField();
+        openModal('vehicleModal');
+    }
+
+    function openEditModal(id, plate, model, type, owner, status) {
+        document.getElementById('modal_vehicle_id').value = id;
+        document.getElementById('m_plate').value = plate;
+        document.getElementById('model').value = model;
+        document.getElementById('m_type').value = type;
+        document.getElementById('m_owner').value = owner;
+        document.getElementById('m_status').value = status;
+        document.getElementById('modalTitle').innerText = 'تعديل بيانات المركبة: ' + plate;
+        toggleOwnerField();
+        openModal('vehicleModal');
+    }
+
+    function toggleOwnerField() {
+        const type = document.getElementById('m_type').value;
+        const wrapper = document.getElementById('owner_field_wrapper');
+        wrapper.style.display = (type === 'company') ? 'none' : 'block';
+    }
+</script>
+{% endblock %}

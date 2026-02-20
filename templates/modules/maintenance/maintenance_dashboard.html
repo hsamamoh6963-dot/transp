@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/maintenance.css' %}">
+{% endblock %}
+
+
+{% block title %}مركز الصيانة والورش{% endblock %}
+
+{% block content %}
+<div class="maintenance-container">
+    
+    <div class="maintenance-stats">
+        <div class="mini-card warning">
+            <div class="card-icon"><i class="fas fa-tools"></i></div>
+            <div class="card-info">
+                <span>صيانات مفتوحة</span>
+                <h3>{{ requests.count }}</h3>
+            </div>
+        </div>
+        <div class="mini-card danger">
+            <div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="card-info">
+                <span>مركبات معطلة</span>
+                <h3>{{ stats.inactive_vehicles|default:"0" }}</h3>
+            </div>
+        </div>
+        <div class="mini-card info">
+            <div class="card-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="card-info">
+                <span>إجمالي المصاريف</span>
+                <h3>{{ total_maintenance_cost|default:"0.0" }}</h3>
+            </div>
+        </div>
+        <div class="mini-card success">
+            <div class="card-icon"><i class="fas fa-check-double"></i></div>
+            <div class="card-info">
+                <span>ورش متعاقد معها</span>
+                <h3>{{ workshops.count }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <div class="search-box">
+            <form method="GET" class="inline-form">
+                <input type="text" name="plate_number" placeholder="رقم اللوحة..." value="{{ request.GET.plate_number }}">
+                <select name="status">
+                    <option value="">كل الحالات</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>تحت الإصلاح</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>مكتملة</option>
+                </select>
+                <button type="submit" class="btn-search"><i class="fas fa-filter"></i> فلترة</button>
+            </form>
+        </div>
+        <div class="header-actions">
+            <button class="btn-primary" onclick="openModal('addMaintenanceModal')">
+                <i class="fas fa-plus"></i> فتح أمر إصلاح
+            </button>
+            <button class="btn-secondary" onclick="openModal('manageWorkshopsModal')">
+                <i class="fas fa-warehouse"></i> إدارة الورش
+            </button>
+        </div>
+    </div>
+
+    <div class="data-card shadow">
+        <div class="card-header">
+            <h4><i class="fas fa-clipboard-list me-2"></i> سجل طلبات الصيانة</h4>
+        </div>
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th>رقم الطلب</th>
+                    <th>المركبة</th>
+                    <th>نوع الصيانة</th>
+                    <th>الورشة</th>
+                    <th>تاريخ الدخول</th>
+                    <th>التكلفة التقديرية</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td><span class="plate-badge">{{ req.vehicle.plate_number }}</span></td>
+                    <td>
+                        {% if req.accident_ref %}
+                        <span class="badge-accident"><i class="fas fa-car-crash"></i> حادث</span>
+                        {% else %}
+                        <span class="badge-service"><i class="fas fa-oil-can"></i> دورية</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ req.workshop.name }}</td>
+                    <td>{{ req.date_reported|date:"Y-m-d" }}</td>
+                    <td>{{ req.expected_cost|default:"0" }} ر.س</td>
+                    <td>
+                        <span class="status-pill {{ req.status }}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if req.status == 'pending' %}
+                        <button class="btn-table-success" onclick="openCloseModal('{{ req.id }}', '{{ req.vehicle.plate_number }}')">
+                            <i class="fas fa-check"></i> إغلاق وإرجاع
+                        </button>
+                        {% else %}
+                        <span class="text-muted"><i class="fas fa-lock"></i> مكتمل</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center p-5 text-muted">لا توجد طلبات صيانة حالياً</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="addMaintenanceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-tools"></i> فتح أمر إصلاح جديد</h3>
+            <span class="close" onclick="closeModal('addMaintenanceModal')">&times;</span>
+        </div>
+        <form method="POST" action="{% url 'maintenance_create' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>اختيار المركبة</label>
+                        <select name="vehicle" required>
+                            {% for veh in vehicles %}
+                            <option value="{{ veh.id }}">{{ veh.plate_number }} ({{ veh.model }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>الورشة المستلمة</label>
+                        <select name="workshop" required>
+                            {% for w in workshops %}
+                            <option value="{{ w.id }}">{{ w.name }} - {{ w.specialty }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>سبب الصيانة / وصف العطل</label>
+                        <textarea name="reason" rows="3" placeholder="اشرح العطل بالتفصيل..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>التكلفة التقديرية (ر.س)</label>
+                        <input type="number" name="cost" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>مرتبط بحادث؟ (اختياري)</label>
+                        <input type="number" name="accident_id" placeholder="رقم سجل الحادث">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-primary-confirm">تأكيد الإرسال للورشة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="closeMaintenanceModal" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header bg-success text-white">
+            <h3>إغلاق أمر الصيانة: <span id="target_plate"></span></h3>
+            <span class="close" onclick="closeModal('closeMaintenanceModal')">&times;</span>
+        </div>
+        <form id="closeForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>التكلفة الفعلية النهائية (ر.س)</label>
+                    <input type="number" name="actual_cost" step="0.01" required placeholder="0.00">
+                </div>
+                <p class="warning-text"><i class="fas fa-info-circle"></i> سيتم إعادة المركبة لحالة "نشط" فور الحفظ.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-success-confirm">اعتماد الإغلاق وإرجاع للخدمة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="manageWorkshopsModal" class="modal">
+    <div class="modal-content x-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-warehouse"></i> إدارة شبكة الورش</h3>
+            <span class="close" onclick="closeModal('manageWorkshopsModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="workshop-layout">
+                <div class="add-workshop-form">
+                    <h5>إضافة ورشة جديدة</h5>
+                    <form method="POST" action="{% url 'workshop_add' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create">
+                        <input type="text" name="name" placeholder="اسم الورشة" required>
+                        <input type="text" name="address" placeholder="العنوان">
+                        <input type="text" name="phone" placeholder="رقم التواصل">
+                        <button type="submit" class="btn-add">إضافة</button>
+                    </form>
+                </div>
+                <div class="workshops-list">
+                    <table class="mini-table">
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>العنوان</th>
+                                <th>العمليات الحالية</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for w in workshops %}
+                            <tr>
+                                <td>{{ w.name }}</td>
+                                <td>{{ w.address }}</td>
+                                <td><span class="count-badge">{{ w.current_jobs_count|default:"0" }}</span></td>
+                                <td>
+                                    <form method="POST" action="{% url 'workshop_edit_delete' pk=w.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete">
+                                        <button class="btn-del" onclick="return confirm('هل أنت متأكد من حذف هذه الورشة؟')"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function openCloseModal(reqId, plate) {
+        document.getElementById('target_plate').innerText = plate;
+        document.getElementById('closeForm').action = `/maintenance/${reqId}/close/`;
+        openModal('closeMaintenanceModal');
+    }
+
+    // إغلاق النوافذ عند الضغط خارجها
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

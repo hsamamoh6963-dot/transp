@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+
+    <link rel="stylesheet" href="{% static 'css/employees.css' %}">
+    <style>
+        /* تنسيق التبويبات */
+        .tabs-container { margin-top: 30px; }
+        .tabs-header { display: flex; gap: 10px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 25px; cursor: pointer; border: none; background: none; font-weight: bold; color: #7f8c8d; }
+        .tab-btn.active { color: var(--rank-dark-blue); border-bottom: 3px solid var(--rank-gold); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .status-banner { padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .status-active { background: #e8f5e9; color: #2e7d32; border-right: 5px solid #2e7d32; }
+        .status-inactive { background: #ffebee; color: #c62828; border-right: 5px solid #c62828; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="employee-container">
+    
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+            <nav style="font-size: 14px; margin-bottom: 10px;">
+                <a href="{% url 'employee_list' %}" style="color: var(--rank-gold);">قائمة الموظفين</a> / تفاصيل الموظف
+            </nav>
+            <h2>{{ employee.name }}</h2>
+            <span class="type-badge">{{ employee.rank.name }} | الرقم العسكري: {{ employee.military_number }}</span>
+        </div>
+        
+        <div class="actions">
+            <form method="POST">
+                {% csrf_token %}
+                {% if employee.is_active %}
+                    <input type="hidden" name="action" value="deactivate">
+                    <button type="submit" class="btn-primary" style="background-color: #e74c3c !important;">
+                        <i class="fas fa-user-slash"></i> تعطيل الحساب
+                    </button>
+                {% else %}
+                    <input type="hidden" name="action" value="activate">
+                    <button type="submit" class="btn-primary" style="background-color: #27ae60 !important;">
+                        <i class="fas fa-user-check"></i> إعادة تنشيط الموظف
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="status-banner {% if employee.is_active %}status-active{% else %}status-inactive{% endif %}">
+        <div>
+            <strong>حالة الموظف:</strong> 
+            {% if employee.is_active %} نشط - الموظف مخول لاستلام الوقود والقيام بالرحلات.
+            {% else %} معطل - الحساب مجمد ولا يمكن إجراء أي عمليات عليه.
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="stat-card cyan">
+            <div class="stat-icon"><i class="fas fa-gas-pump"></i></div>
+            <div class="stat-data">
+                <p>الرصيد الحالي</p>
+                <h3>{{ balance|floatformat:1 }} لتر</h3>
+            </div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon"><i class="fas fa-fill-drip"></i></div>
+            <div class="stat-data">
+                <p>إجمالي الاستهلاك</p>
+                <h3>{{ total_consumption|floatformat:1 }} لتر</h3>
+            </div>
+        </div>
+        <div class="stat-card gold">
+            <div class="stat-icon"><i class="fas fa-route"></i></div>
+            <div class="stat-data">
+                <p>إجمالي الرحلات</p>
+                <h3>{{ trips.count }} رحلة</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="showTab('info')">البيانات الأساسية</button>
+            <button class="tab-btn" onclick="showTab('trips')">سجل الرحلات</button>
+            <button class="tab-btn" onclick="showTab('fuel')">سجل الوقود</button>
+        </div>
+
+        <div id="info" class="tab-content active">
+            <div class="data-card" style="padding: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">سياسة الحصص المطبقة</h4>
+                        <p><strong>الحصة الأسبوعية:</strong> {{ effective_weekly }} لتر 
+                            {% if employee.weekly_quota_override %}(مخصصة){% else %}(افتراضية للرتبة){% endif %}</p>
+                        <p><strong>الحصة الشهرية:</strong> {{ effective_monthly }} لتر 
+                            {% if employee.monthly_quota_override %}(مخصصة){% else %}(افتراضية للرتبة){% endif %}</p>
+                    </div>
+                    <div>
+                        <h4 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">التواريخ والحساب</h4>
+                        <p><strong>تاريخ التسجيل:</strong> {{ employee.created_at|date:"Y-m-d" }}</p>
+                        <p><strong>آخر عملية:</strong> {{ employee.fuel_transactions.first.date|default:"لا يوجد" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="trips" class="tab-content">
+            <div class="data-card">
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>المنطقة</th>
+                            <th>المركبة</th>
+                            <th>التاريخ</th>
+                            <th>الدعم الممنوح</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trip in trips %}
+                        <tr>
+                            <td>{{ trip.area }}</td>
+                            <td>{{ trip.vehicle.plate_number }}</td>
+                            <td>{{ trip.start_date|date:"Y-m-d" }}</td>
+                            <td class="qty-cell">{{ trip.fuel_quota_granted }} لتر</td>
+                            <td>{% if trip.end_date %}منتهية{% else %}مستمرة{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align: center; padding: 20px;">لا توجد رحلات مسجلة.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="fuel" class="tab-content">
+             
+            <div class="data-card">
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>النوع</th>
+                            <th>الكمية</th>
+                            <th>السبب/المركبة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in employee.fuel_transactions.all|dictsortreversed:"date" %}
+                        <tr>
+                            <td>{{ trans.date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if trans.transaction_type == 'addition' %}
+                                    <span style="color: green;">+ إضافة</span>
+                                {% else %}
+                                    <span style="color: red;">- صرف</span>
+                                {% endif %}
+                            </td>
+                            <td class="qty-cell">{{ trans.quantity }} لتر</td>
+                            <td>{{ trans.notes|default:"---" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabId) {
+        // إخفاء كل المحتويات
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        // إزالة حالة النشاط من كل الأزرار
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // إظهار المحتوى المختار
+        document.getElementById(tabId).classList.add('active');
+        // تنشيط الزر المختار
+        event.currentTarget.classList.add('active');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/fuel_style.css' %}">
+    <style>
+        .tabs-header { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #f0f2f5; }
+        .tab-link {
+            padding: 12px 25px; cursor: pointer; border: none; background: none;
+            font-weight: bold; color: #7f8c8d; transition: 0.3s; position: relative;
+        }
+        .tab-link.active { color: #3498db; }
+        .tab-link.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; 
+            width: 100%; height: 2px; background: #3498db;
+        }
+        .tab-pane { display: none; animation: fadeIn 0.4s ease; }
+        .tab-pane.active { display: block; }
+        
+        .info-card-detail {
+            background: #f8f9fa; border-radius: 10px; padding: 20px;
+            border-right: 4px solid #34495e; margin-bottom: 20px;
+        }
+        .info-card-detail h4 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .detail-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .detail-item span { color: #7f8c8d; }
+        .detail-item strong { color: #2c3e50; }
+
+        /* تنسيق خاص للطباعة والتصدير */
+        @media print {
+            .no-print { display: none !important; }
+            .tab-pane { display: block !important; opacity: 1 !important; }
+            .fuel-container { padding: 0; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+{% endblock %}
+
+{% block title %}تفاصيل المركبة | {{ vehicle.plate_number }}{% endblock %}
+
+{% block content %}
+<div class="fuel-container">
+    
+    <div class="section-header no-print">
+        <div>
+            <h2 style="margin:0;">مركبة: {{ vehicle.plate_number }}</h2>
+            <small class="type-badge {{ vehicle.vehicle_type }}">{{ vehicle.get_vehicle_type_display }}</small>
+        </div>
+        <div class="actions">
+            <a href="{% url 'vehicle_list' %}" class="btn-search" style="background: #95a5a6; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+                <i class="fas fa-arrow-right"></i> القائمة
+            </a>
+            <button class="btn-primary" style="background: #e74c3c;" onclick="exportToPDF()">
+                <i class="fas fa-file-pdf"></i> تصدير PDF
+            </button>
+            
+        </div>
+    </div>
+
+    <div id="printableArea">
+        <div class="report-only-header" style="display:none; text-align:center; margin-bottom: 20px;">
+            <h2>تقرير تفصيلي للمركبة: {{ vehicle.plate_number }}</h2>
+            <p>تاريخ استخراج التقرير: {% now "Y-m-d" %}</p>
+        </div>
+
+        <div class="summary-grid">
+            <div class="stat-card cyan">
+                <div class="stat-icon"><i class="fas fa-gas-pump"></i></div>
+                <div class="stat-data">
+                    <p>استهلاك الوقود التراكمي</p>
+                    <h3>{{ total_fuel|floatformat:1 }} لتر</h3>
+                </div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="fas fa-tools"></i></div>
+                <div class="stat-data">
+                    <p>إجمالي تكاليف الصيانة</p>
+                    <h3>{{ maintenance_cost|default:"0.00" }} $</h3>
+                </div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon"><i class="fas fa-route"></i></div>
+                <div class="stat-data">
+                    <p>عدد الرحلات المنفذة</p>
+                    <h3>{{ trip_count }} رحلة</h3>
+                </div>
+            </div>
+            <div class="stat-card {% if accident_cost > 0 %}danger{% else %}info{% endif %}" 
+                 style="border-right-color: {% if accident_cost > 0 %}#e74c3c{% else %}#3498db{% endif %};">
+                <div class="stat-icon"><i class="fas fa-car-crash"></i></div>
+                <div class="stat-data">
+                    <p>تكاليف الحوادث</p>
+                    <h3>{{ accident_cost|default:"0.00" }} $</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-card" style="padding: 25px;">
+            <div class="tabs-header no-print">
+                <button class="tab-link active" onclick="switchTab(event, 'overview')">ملخص الحالة</button>
+                <button class="tab-link" onclick="switchTab(event, 'trips')">سجل الرحلات</button>
+                <button class="tab-link" onclick="switchTab(event, 'maintenance')">الصيانة والورش</button>
+                <button class="tab-link" onclick="switchTab(event, 'accidents')">سجل الحوادث</button>
+            </div>
+
+            <div id="overview" class="tab-pane active">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="info-card-detail">
+                        <h4><i class="fas fa-info-circle"></i> البيانات الفنية</h4>
+                        <div class="detail-item"><span>رقم اللوحة:</span> <strong>{{ vehicle.plate_number }}</strong></div>
+                        <div class="detail-item"><span>الموديل:</span> <strong>{{ vehicle.model }}</strong></div>
+                        <div class="detail-item"><span>نوع الملكية:</span> <strong>{{ vehicle.get_vehicle_type_display }}</strong></div>
+                        <div class="detail-item"><span>المالك/المسؤول:</span> <strong>{{ vehicle.owner.name|default:"المؤسسة" }}</strong></div>
+                        <div class="detail-item"><span>الحالة التشغيلية:</span> 
+                            <span class="status-pill {{ vehicle.status }}">{{ vehicle.get_status_display }}</span>
+                        </div>
+                    </div>
+                    <div class="info-card-detail" style="border-right-color: #2ecc71;">
+                        <h4><i class="fas fa-chart-line"></i> آخر نشاط</h4>
+                        {% with last_trip=recent_trips.first %}
+                            {% if last_trip %}
+                            <div class="detail-item"><span>آخر رحلة:</span> <strong>{{ last_trip.area }}</strong></div>
+                            <div class="detail-item"><span>التاريخ:</span> <strong>{{ last_trip.start_date|date:"Y-m-d" }}</strong></div>
+                            <div class="detail-item"><span>السائق:</span> <strong>{{ last_trip.employee.name }}</strong></div>
+                            {% else %}
+                            <p class="text-muted">لا توجد رحلات مسجلة مؤخراً.</p>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+            <div id="trips" class="tab-pane">
+                <h4 class="report-only-header" style="display:none;">سجل الرحلات</h4>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الموظف/السائق</th>
+                            <th>الجهة/المنطقة</th>
+                            <th>الكمية الممنوحة</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trip in recent_trips %}
+                        <tr>
+                            <td>{{ trip.start_date|date:"Y-m-d H:i" }}</td>
+                            <td><strong>{{ trip.employee.name }}</strong></td>
+                            <td>{{ trip.area }}</td>
+                            <td>{{ trip.fuel_quota_granted }} لتر</td>
+                            <td>{% if trip.end_date %}مكتملة{% else %}قيد التنفيذ{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center;">لا يوجد سجل رحلات.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="maintenance" class="tab-pane">
+                <h4 class="report-only-header" style="display:none;">سجل الصيانة</h4>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الورشة</th>
+                            <th>السبب</th>
+                            <th>التكلفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in recent_maintenance %}
+                        <tr>
+                            <td>{{ m.date_reported|date:"Y-m-d" }}</td>
+                            <td>{{ m.workshop.name }}</td>
+                            <td>{{ m.reason|truncatechars:30 }}</td>
+                            <td>{{ m.cost }} $</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="accidents" class="tab-pane">
+                <h4 class="report-only-header" style="display:none;">سجل الحوادث</h4>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوصف</th>
+                            <th>التكلفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acc in recent_accidents %}
+                        <tr>
+                            <td>{{ acc.date_occurred|date:"Y-m-d" }}</td>
+                            <td>{{ acc.description }}</td>
+                            <td>{{ acc.damage_cost }} $</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    // نظام التبديل بين التبويبات
+    function switchTab(evt, tabName) {
+        let i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-pane");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+            tabcontent[i].classList.remove("active");
+        }
+        tablinks = document.getElementsByClassName("tab-link");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).style.display = "block";
+        document.getElementById(tabName).classList.add("active");
+        if(evt) evt.currentTarget.classList.add("active");
+    }
+
+    // تصدير PDF
+    function exportToPDF() {
+        const element = document.getElementById("printableArea");
+        
+        // إظهار كافة التبويبات والعناوين الخاصة بالتقرير
+        const panes = document.querySelectorAll('.tab-pane');
+        panes.forEach(p => p.style.display = 'block');
+        const headers = document.querySelectorAll('.report-only-header');
+        headers.forEach(h => h.style.display = 'block');
+
+        const opt = {
+            margin:       [10, 5, 10, 5],
+            filename:     "تقرير_مركبة_{{ vehicle.plate_number }}.pdf",
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            // إعادة الحالة الطبيعية بعد التصدير
+            headers.forEach(h => h.style.display = 'none');
+            switchTab(null, 'overview');
+            document.querySelector('.tab-link').classList.add('active');
+        });
+    }
+
+    
+
+</script>
+{% endblock %}

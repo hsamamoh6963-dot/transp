@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/trip_style.css' %}">
+    <style>
+        /* تنسيقات إضافية خاصة بشاشة الرحلات */
+        .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .mini-stat { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; border-right: 4px solid #3498db; }
+        .mini-stat i { font-size: 20px; color: #3498db; }
+        .mini-stat div p { margin: 0; font-size: 12px; color: #7f8c8d; }
+        .mini-stat div h4 { margin: 0; font-size: 18px; color: #2c3e50; }
+        
+        .status-pill.open { background: #ebf5ff; color: #3498db; border: 1px solid #3498db; }
+        .status-pill.closed { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
+        
+        /* تحسين شكل المودال للقسمين */
+        .modal-section-title { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 15px; color: #34495e; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="fuel-container">
+    
+    <div class="section-header">
+        <h2>إدارة حركة الرحلات</h2>
+        <div class="actions">
+            <button class="btn-primary" onclick="openModal('tripCreateModal')">
+                <i class="fas fa-plus"></i> رحلة جديدة
+            </button>
+        </div>
+    </div>
+
+    <div class="summary-strip">
+        <div class="mini-stat">
+            <i class="fas fa-clock"></i>
+            <div><p>رحلات مفتوحة</p><h4>{{ trips.count }}</h4></div>
+        </div>
+        <div class="mini-stat" style="border-right-color: #27ae60;">
+            <i class="fas fa-calendar-check" style="color: #27ae60;"></i>
+            <div><p>رحلات هذا الشهر</p><h4>{{ monthly_count|default:"0" }}</h4></div>
+        </div>
+        <div class="mini-stat" style="border-right-color: #f1c40f;">
+            <i class="fas fa-gas-pump" style="color: #f1c40f;"></i>
+            <div><p>إجمالي الحصص</p><h4>{{ total_quotas|floatformat:1 }} لتر</h4></div>
+        </div>
+        <div class="mini-stat" style="border-right-color: #9b59b6;">
+            <i class="fas fa-route" style="color: #9b59b6;"></i>
+            <div><p>متوسط المدة</p><h4>{{ avg_duration|default:"-" }} س</h4></div>
+        </div>
+    </div>
+
+    <div class="data-card" style="margin-bottom: 20px; padding: 15px;">
+        <form method="GET" class="inline-filter">
+            <select name="status">
+                <option value="active" {% if request.GET.status == 'active' or not request.GET.status %}selected{% endif %}>🔵 الرحلات المفتوحة</option>
+                <option value="closed" {% if request.GET.status == 'closed' %}selected{% endif %}>🟢 الرحلات المغلقة</option>
+                <option value="all" {% if request.GET.status == 'all' %}selected{% endif %}>كل السجلات</option>
+            </select>
+            <select name="employee">
+                <option value="">كل الموظفين</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"i" %}selected{% endif %}>{{ emp.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="area" placeholder="بحث بالمنطقة..." value="{{ request.GET.area }}">
+            <button type="submit" class="btn-search"><i class="fas fa-filter"></i> فلترة</button>
+            <a href="{% url 'trip_list' %}" class="btn-search" style="background:#95a5a6; color:white;"><i class="fas fa-undo"></i></a>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th>المركبة</th>
+                    <th>الموظف</th>
+                    <th>نوع الرحلة</th>
+                    <th>المنطقة</th>
+                    <th>وقت البدء</th>
+                    <th>الحصة</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips %}
+                <tr>
+                    <td><strong>{{ trip.vehicle.plate_number }}</strong></td>
+                    <td>{{ trip.employee.name }}</td>
+                    <td><span class="type-badge">{{ trip.trip_type }}</span></td>
+                    <td>{{ trip.area }}</td>
+                    <td>{{ trip.start_date|date:"Y-m-d H:i" }}</td>
+                    <td><span style="color:#27ae60; font-weight:bold;">{{ trip.fuel_quota_granted }} لتر</span></td>
+                    <td>
+                        {% if not trip.end_date %}
+                            <span class="status-pill open">مفتوحة</span>
+                        {% else %}
+                            <span class="status-pill closed">مغلقة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{% url 'trip_detail' trip.id %}" class="btn-search" title="عرض التفاصيل"><i class="fas fa-eye"></i></a>
+                            
+                            {% if not trip.end_date %}
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('هل تريد إغلاق الرحلة وتحرير المركبة؟');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="close">
+                                <input type="hidden" name="trip_id" value="{{ trip.id }}">
+                                <button type="submit" class="btn-search" style="background:#27ae60" title="إغلاق الرحلة">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center; padding:30px;">لا توجد رحلات مطابقة للبحث.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="tripCreateModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>تسجيل رحلة عمل جديدة</h3>
+            <span class="close" onclick="closeModal('tripCreateModal')">&times;</span>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <div class="modal-body">
+                
+                <div class="modal-section-title"><i class="fas fa-link"></i> البيانات الأساسية والربط</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>المركبة (النشطة فقط)</label>
+                        <select name="vehicle" required>
+                            <option value="">-- اختر مركبة --</option>
+                            {% for v in available_vehicles %}
+                            <option value="{{ v.id }}">{{ v.plate_number }} ({{ v.model }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>الموظف/السائق</label>
+                        <select name="employee" required id="employee_select">
+                            <option value="">-- اختر الموظف --</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع الرحلة</label>
+                        <input type="text" name="trip_type" placeholder="مثلاً: مهمة رسمية، نقل ركاب" required>
+                    </div>
+                    <div class="form-group">
+                        <label>المنطقة/الوجهة</label>
+                        <input type="text" name="area" placeholder="مثلاً: الخرطوم، بورتسودان" required>
+                    </div>
+                </div>
+
+                <div class="modal-section-title"><i class="fas fa-gas-pump"></i> حصة الوقود المخصصة</div>
+                <div class="form-group">
+                    <label>الكمية الممنوحة (Fuel Quota)</label>
+                    <input type="number" step="0.1" name="fuel_quota" value="0.0" required>
+                    <small style="color: #e67e22;"><i class="fas fa-exclamation-triangle"></i> سيتم إنشاء عملية صرف وقود تلقائية بهذا المقدار.</small>
+                </div>
+
+                <div class="form-group">
+                    <label>ملاحظات إضافية</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-save-fuel" style="width:100%">ابدأ الرحلة واصرف الحصة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
+    // إغلاق المودال عند الضغط خارج المحتوى
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

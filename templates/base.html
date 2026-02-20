@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة الأسطول{% endblock %}</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/main_style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-gas-pump"></i>
+            <span>نظام الوقود</span>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i> لوحة التحكم
+                    </a>
+                </li>
+                
+                <li class="nav-label">إدارة الأصول</li>
+                <li>
+                    <a href="{% url 'rank_list' %}" class="{% if request.resolver_match.url_name == 'rank_list' %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i> الرتب
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'employee_list' %}" class="{% if 'employee' in request.path %}active{% endif %}">
+                        <i class="fas fa-users"></i> الموظفين
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'vehicle_list' %}" class="{% if 'vehicle' in request.path %}active{% endif %}">
+                        <i class="fas fa-car"></i> المركبات
+                    </a>
+                </li>
+
+                <li class="nav-label">العمليات الميدانية</li>
+                <li>
+                    <a href="{% url 'trip_list' %}" class="{% if 'trip' in request.path %}active{% endif %}">
+                        <i class="fas fa-route"></i> الرحلات
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'fuel_log_list' %}" class="{% if 'fuel' in request.path %}active{% endif %}">
+                        <i class="fas fa-fill-drip"></i> سجلات الوقود
+                    </a>
+                </li>
+
+                <li class="nav-label">الأزمات والصيانة</li>
+                <li>
+                    <a href="{% url 'accident_list' %}" class="{% if 'accident' in request.path %}active{% endif %}">
+                        <i class="fas fa-car-crash"></i> الحوادث
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'maintenance_dashboard' %}" class="{% if 'maintenance' in request.path %}active{% endif %}">
+                        <i class="fas fa-tools"></i> الصيانة والورش
+                    </a>
+                </li>
+
+                <li class="nav-label">الإدارة</li>
+                <li>
+                    <a href="{% url 'report_center' %}" class="{% if 'report' in request.path %}active{% endif %}">
+                        <i class="fas fa-file-invoice-dollar"></i> مركز التقارير
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        
+        <header class="navbar">
+            <div class="nav-left">
+                <i class="fas fa-user-circle fa-2x"></i>
+                <span class="user-info">
+                    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong> 
+                    <small>({% firstof request.user.groups.all.0 'مسؤول نظام' %})</small>
+                </span>
+            </div>
+            
+           
+            <div class="nav-right">
+                <form action="#" method="POST"> {% csrf_token %}
+                    <button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i> خروج</button>
+                </form>
+            </div>
+        </header>
+
+        <section class="content-area">
+            {% if messages %}
+                <div class="messages-container" style="padding: 10px; direction: rtl;">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" style="padding: 15px; margin-bottom: 10px; border-radius: 5px; background-color: {% if message.tags == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message.tags == 'success' %}#155724{% else %}#721c24{% endif %};">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}
+            {% endblock %}
+        </section>
+
+        <footer class="status-bar">
+            <div class="status-item"><i class="far fa-calendar-alt"></i> {{ now|date:"Y-m-d" }}</div>
+            <div class="status-item"><i class="fas fa-clock"></i> <span id="clock"></span></div>
+            <div class="status-item"><i class="fas fa-shield-alt"></i> الحالة: <span class="online">آمن</span></div>
+        </footer>
+    </main>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('ar-SA');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

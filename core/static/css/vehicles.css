@@ -1,0 +1,26 @@
+/* مؤشرات الحالة اللحظية */
+.status-indicator {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 5px;
+}
+.status-indicator.active { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+.status-indicator.inactive { background: #95a5a6; }
+
+/* Badges الملكية */
+.type-badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+.type-badge.company { background: #e8f4fd; color: #2980b9; border: 1px solid #2980b9; }
+.type-badge.private { background: #fef9e7; color: #f39c12; border: 1px solid #f39c12; }
+
+/* Tabs Styling */
+.tabs-nav { border-bottom: 2px solid #eee; margin-bottom: 20px; display: flex; gap: 10px; }
+.tab-btn {
+    padding: 10px 20px; border: none; background: none; cursor: pointer;
+    font-weight: bold; color: #777; transition: 0.3s;
+}
+.tab-btn.active { color: var(--primary-color); border-bottom: 3px solid var(--primary-color); }
+
+/* زر عرض السجل */
+.btn-view-detail {
+    text-decoration: none; color: var(--secondary-color); font-size: 13px; font-weight: bold;
+    padding: 5px 10px; border: 1px solid #eee; border-radius: 4px; transition: 0.3s;
+}
+.btn-view-detail:hover { background: var(--bg-light); }

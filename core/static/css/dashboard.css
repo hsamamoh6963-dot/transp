@@ -1,0 +1,112 @@
+/* الحاوية الرئيسية */
+.dashboard-container { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 30px; 
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+/* 1️⃣ شبكة الإحصائيات العلوية */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-right: 5px solid #ccc;
+    transition: transform 0.2s;
+}
+.stat-card:hover { transform: translateY(-5px); }
+.stat-card.green { border-right-color: #2ecc71; }
+.stat-card.blue { border-right-color: #3498db; }
+.stat-card.orange { border-right-color: #f39c12; }
+.stat-card.red { border-right-color: #e74c3c; }
+
+/* 2️⃣ صفوف التحليل والبيانات المرئية (التوزيع الجديد) */
+.analysis-row, .visual-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* تقسيم الصفحة لنصفين */
+    gap: 25px;
+}
+
+@media (max-width: 992px) {
+    .analysis-row, .visual-row { grid-template-columns: 1fr; } /* عمود واحد في الشاشات الصغيرة */
+}
+
+/* تصميم البطاقات الموحد */
+.info-card, .chart-wrapper, .alerts-wrapper {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid #f1f3f5;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2d3436;
+}
+
+/* تفاصيل الوقود والمالية */
+.main-metric .value { font-size: 2.5rem; font-weight: 800; color: #2d3436; }
+.main-metric .label { font-size: 0.9rem; color: #636e72; }
+
+.detail-item {
+    font-size: 0.95rem;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fin-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #edf2f7; }
+.total-row { 
+    color: #d63031; 
+    font-weight: bold; 
+    background: #fff5f5; 
+    padding: 15px; 
+    border-radius: 10px;
+    margin-top: auto; /* دفع الإجمالي للأسفل ليحاذي البطاقة المجاورة */
+}
+
+/* 3️⃣ التنبيهات */
+.alert-box {
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+}
+.alert-box.success { background: #ebfbee; color: #2f9e44; }
+.alert-box.warning { background: #fff9db; color: #f08c00; }
+.alert-box.info { background: #e7f5ff; color: #1971c2; }
+.alert-box.danger { background: #fff5f5; color: #c53030; }
+
+/* 4️⃣ الإجراءات السريعة */
+.quick-actions-bar {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
