@@ -28,4 +28,8 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # أمر التشغيل النهائي
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "core.wsgi:application"]
+# السطر الأخير في ملف الـ Dockerfile الخاص بك
+CMD python manage.py migrate && \
+    python create_admin.py && \
+    python seed_data.py && \
+    gunicorn --bind 0.0.0.0:8000 core.wsgi:application
