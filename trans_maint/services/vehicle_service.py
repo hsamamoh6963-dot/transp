@@ -85,6 +85,9 @@ class VehicleService:
         """
         vehicle = VehicleService.get_vehicle(vehicle_id)
         
+        if vehicle.status == 'under_repair':
+            return False, "المركبة قيد الإصلاح في الورشة ولا يمكنها الخروج في رحلة."
+        
         # 1. فحص الحالة الإدارية
         if vehicle.status != 'active':
             return False, "المركبة غير نشطة حالياً."

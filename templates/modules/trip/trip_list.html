@@ -6,20 +6,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/trip_style.css' %}">
-    <style>
-        /* تنسيقات إضافية خاصة بشاشة الرحلات */
-        .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .mini-stat { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; border-right: 4px solid #3498db; }
-        .mini-stat i { font-size: 20px; color: #3498db; }
-        .mini-stat div p { margin: 0; font-size: 12px; color: #7f8c8d; }
-        .mini-stat div h4 { margin: 0; font-size: 18px; color: #2c3e50; }
-        
-        .status-pill.open { background: #ebf5ff; color: #3498db; border: 1px solid #3498db; }
-        .status-pill.closed { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
-        
-        /* تحسين شكل المودال للقسمين */
-        .modal-section-title { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 15px; color: #34495e; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-    </style>
+
 {% endblock %}
 
 {% block content %}
@@ -128,9 +115,9 @@
 </div>
 
 <div id="tripCreateModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 650px;">
         <div class="modal-header">
-            <h3>تسجيل رحلة عمل جديدة</h3>
+            <h3><i class="fas fa-route"></i> تسجيل رحلة عمل جديدة</h3>
             <span class="close" onclick="closeModal('tripCreateModal')">&times;</span>
         </div>
         <form method="POST">
@@ -138,8 +125,11 @@
             <input type="hidden" name="action" value="create">
             <div class="modal-body">
                 
-                <div class="modal-section-title"><i class="fas fa-link"></i> البيانات الأساسية والربط</div>
-                <div class="form-row">
+                <div class="modal-section-title">
+                    <i class="fas fa-link"></i> البيانات الأساسية والربط
+                </div>
+                
+                <div class="form-grid">
                     <div class="form-group">
                         <label>المركبة (النشطة فقط)</label>
                         <select name="vehicle" required>
@@ -160,7 +150,7 @@
                     </div>
                 </div>
 
-                <div class="form-row">
+                <div class="form-grid">
                     <div class="form-group">
                         <label>نوع الرحلة</label>
                         <input type="text" name="trip_type" placeholder="مثلاً: مهمة رسمية، نقل ركاب" required>
@@ -171,20 +161,26 @@
                     </div>
                 </div>
 
-                <div class="modal-section-title"><i class="fas fa-gas-pump"></i> حصة الوقود المخصصة</div>
-                <div class="form-group">
-                    <label>الكمية الممنوحة (Fuel Quota)</label>
+                <div class="modal-section-title">
+                    <i class="fas fa-gas-pump"></i> حصة الوقود المخصصة
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>الكمية الممنوحة (لتر)</label>
                     <input type="number" step="0.1" name="fuel_quota" value="0.0" required>
-                    <small style="color: #e67e22;"><i class="fas fa-exclamation-triangle"></i> سيتم إنشاء عملية صرف وقود تلقائية بهذا المقدار.</small>
+                    <div class="form-notice">
+                        <i class="fas fa-exclamation-triangle"></i> سيتم إنشاء عملية صرف وقود تلقائية بهذا المقدار فور بدء الرحلة.
+                    </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label>ملاحظات إضافية</label>
-                    <textarea name="notes" rows="2"></textarea>
+                    <textarea name="notes" rows="2" placeholder="أي تفاصيل إضافية عن الرحلة..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn-save-fuel" style="width:100%">ابدأ الرحلة واصرف الحصة</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('tripCreateModal')">إلغاء</button>
+                <button type="submit" class="btn-save-trip">ابدأ الرحلة واصرف الحصة</button>
             </div>
         </form>
     </div>

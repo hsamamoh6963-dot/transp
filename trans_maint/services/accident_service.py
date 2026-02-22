@@ -20,7 +20,7 @@ class AccidentService:
             
             # 2. تغيير حالة المركبة إلى (غير نشطة) لضمان السلامة
             # سيؤدي هذا لجعل دالة check_vehicle_availability تعيد False تلقائياً
-            vehicle.status = 'inactive'
+            vehicle.status = 'under_repair'
             vehicle.save()
             
             return accident

@@ -150,7 +150,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for trans in employee.fuel_transactions.all|dictsortreversed:"date" %}
+                        {% for trans in employee.fueltransaction_set.all|dictsortreversed:"date" %}
                         <tr>
                             <td>{{ trans.date|date:"Y-m-d H:i" }}</td>
                             <td>

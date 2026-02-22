@@ -1,14 +1,22 @@
-/* --- تنسيقات خاصة بلوحة الصيانة --- */
+/* maintenance.css - هوية إدارة الصيانة الملكية */
 
-/* --- الحاوية الأساسية --- */
-.maintenance-container {
-    padding: 25px;
-    background-color: #f4f7f6;
-    min-height: 100vh;
-    direction: rtl;
+:root {
+    --rank-gold: #d4af37;
+    --rank-dark-blue: #2c3e50;
+    --active-green: #2ecc71;
+    --danger-red: #e74c3c;
+    --info-blue: #3498db;
+    --bg-light: #f4f7f6;
+    --shadow-soft: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* --- بطاقات الإحصائيات (Stats) --- */
+.maintenance-container {
+    padding: 10px;
+    direction: rtl;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* --- بطاقات الإحصائيات (Mini Cards) بستايل الحواف الملونة --- */
 .maintenance-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -29,20 +37,75 @@
 }
 
 .mini-card:hover { transform: translateY(-5px); }
-.mini-card.warning { border-right-color: #f39c12; }
-.mini-card.danger { border-right-color: #e74c3c; }
-.mini-card.info { border-right-color: #3498db; }
-.mini-card.success { border-right-color: #2ecc71; }
 
-.card-icon {
-    font-size: 2rem;
-    color: #bdc3c7;
-}
+/* توجيه الألوان بناءً على الكلاسات في الـ HTML */
+.mini-card.warning { border-right-color: var(--rank-gold); }
+.mini-card.danger { border-right-color: var(--danger-red); }
+.mini-card.info { border-right-color: var(--info-blue); }
+.mini-card.success { border-right-color: var(--active-green); }
+
+.card-icon { font-size: 2rem; color: #bdc3c7; width: 50px; text-align: center; }
+.mini-card.warning .card-icon { color: var(--rank-gold); }
+.mini-card.danger .card-icon { color: var(--danger-red); }
+.mini-card.info .card-icon { color: var(--info-blue); }
+.mini-card.success .card-icon { color: var(--active-green); }
 
 .card-info span { font-size: 13px; color: #7f8c8d; font-weight: bold; }
-.card-info h3 { margin: 5px 0 0; color: #2c3e50; font-size: 1.5rem; }
+.card-info h3 { margin: 5px 0 0; color: var(--rank-dark-blue); font-size: 1.4rem; }
 
-/* --- الجداول والبيانات --- */
+/* --- الهيدر والبحث --- */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+}
+
+.inline-form { display: flex; gap: 10px; }
+.inline-form input, .inline-form select {
+    padding: 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    min-width: 150px;
+}
+
+.btn-search {
+    background: var(--rank-dark-blue);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.header-actions { display: flex; gap: 10px; }
+
+/* الأزرار الأساسية */
+.btn-primary, .btn-primary-confirm {
+    background: var(--rank-dark-blue);
+    color: white;
+    border: 1px solid var(--rank-gold);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--rank-dark-blue);
+    border: 1px solid var(--rank-dark-blue);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* --- الجداول بستايل الـ Data Card --- */
 .data-card {
     background: white;
     border-radius: 15px;
@@ -50,47 +113,56 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
-.main-table {
-    width: 100%;
-    border-collapse: collapse;
+.card-header {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    color: var(--rank-dark-blue);
 }
 
+.main-table { width: 100%; border-collapse: collapse; }
 .main-table th {
     background: #f8f9fa;
     padding: 15px;
     text-align: right;
-    color: #34495e;
+    color: var(--rank-dark-blue);
     border-bottom: 2px solid #edf2f7;
 }
 
-.main-table td {
-    padding: 15px;
-    border-bottom: 1px solid #edf2f7;
-    vertical-align: middle;
-}
+.main-table td { padding: 15px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
 
-/* شارات اللوحات والأنواع */
+/* شارات الجدول */
 .plate-badge {
-    background: #2c3e50;
-    color: #ecf0f1;
-    padding: 5px 10px;
+    background: #ffffff;
+    
+    border-right-width: 6px;
+    padding: 3px 10px;
     border-radius: 5px;
-    font-family: 'Courier New', monospace;
     font-weight: bold;
 }
 
-.badge-accident { color: #e74c3c; background: #fdedec; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-.badge-service { color: #3498db; background: #ebf5fb; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+.badge-accident { color: var(--danger-red); font-weight: bold; }
+.badge-service { color: var(--info-blue); font-weight: bold; }
+
+.status-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+.status-pill.pending { background: #fff9e6; color: #856404; }
+.status-pill.completed { background: #e8f5e9; color: #2e7d32; }
+
+.btn-table-success {
+    background: var(--active-green);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
 
 /* --- النوافذ المنبثقة (Modals) --- */
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+    left: 0; top: 0; width: 100%; height: 100%;
     background-color: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
@@ -100,107 +172,47 @@
 .modal-content {
     background: white;
     border-radius: 15px;
-    width: 500px;
-    max-width: 90%;
+    width: 650px;
     animation: slideDown 0.3s ease;
+    overflow: hidden;
 }
 
-.modal-content.large { width: 800px; }
-.modal-content.x-large { width: 1000px; }
+.modal-content.small { width: 400px; }
+.modal-content.x-large { width: 900px; }
 
 .modal-header {
     padding: 20px;
-    border-bottom: 1px solid #eee;
+    background: var(--rank-dark-blue);
+    color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.modal-body { padding: 25px; }
+.modal-header h3 i { color: var(--rank-gold); margin-left: 10px; }
 
-@keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+.full-width { grid-column: span 2; }
 
-/* --- النماذج داخل Modals --- */
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.form-group { display: flex; flex-direction: column; gap: 8px; }
-.form-group.full-width { grid-column: span 2; }
-
-.form-group label { font-weight: bold; font-size: 14px; color: #34495e; }
-
+.form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--rank-dark-blue); }
 .form-group input, .form-group select, .form-group textarea {
-    padding: 12px;
-    border: 1px solid #dcdfe6;
-    border-radius: 8px;
-    background: #fdfdfd;
+    width: 100%; padding: 12px; border: 1px solid #dcdfe6; border-radius: 8px;
 }
 
-/* --- أزرار الإجراءات --- */
-.btn-primary-confirm {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 8px;
-    width: 100%;
-    font-weight: bold;
-    cursor: pointer;
-}
+.modal-footer { padding: 20px; background: #f8f9fa; text-align: left; }
 
+/* ألوان نجاح خاصة لإغلاق الطلب */
+.bg-success { background: var(--active-green) !important; }
 .btn-success-confirm {
-    background: #2ecc71;
+    background: var(--active-green);
     color: white;
     border: none;
-    padding: 12px 25px;
+    padding: 12px 30px;
     border-radius: 8px;
-    cursor: pointer;
-}
-
-/* تخطيط إدارة الورش داخل الـ Modal */
-.workshop-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 30px;
-}
-
-.add-workshop-form {
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
-}
-
-.add-workshop-form input {
+    font-weight: bold;
     width: 100%;
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.btn-add {
-    width: 100%;
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
     cursor: pointer;
 }
 
-.btn-del {
-    color: #e74c3c;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.1rem;
-}
-
-.status-pill.pending { background: #fff7e6; color: #d48806; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
-.status-pill.completed { background: #f6ffed; color: #389e0d; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

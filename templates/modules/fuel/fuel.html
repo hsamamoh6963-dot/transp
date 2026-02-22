@@ -45,9 +45,12 @@
                 <button type="submit" class="btn-search"><i class="fas fa-filter"></i></button>
             </form>
         </div>
-        <div class="actions">
+        <div class="header-actions-group">
             <button class="btn-primary" onclick="openModal('addFuelModal')">
                 <i class="fas fa-fill-drip"></i> تسجيل عملية وقود
+            </button>
+            <button class="btn-primary secondary-style" onclick="openModal('adjustFuelModal')">
+                <i class="fas fa-tools"></i> تعديل إداري (استثناء)
             </button>
         </div>
     </div>
@@ -116,16 +119,7 @@
                     </div>
                 </div>
 
-                <div class="balance-preview">
-                    <div class="preview-item">
-                        <span>الرصيد الحالي:</span>
-                        <strong id="current_balance">0.00</strong>
-                    </div>
-                    <div class="preview-item">
-                        <span>الحصة الشهرية:</span>
-                        <strong id="monthly_limit">0.00</strong>
-                    </div>
-                </div>
+                
 
                 <div class="form-row">
                     <div class="form-group">
@@ -153,9 +147,6 @@
 
 </div>
 
-<button class="btn-primary" style="background-color: #f39c12;" onclick="openModal('adjustFuelModal')">
-    <i class="fas fa-tools"></i> تعديل إداري (استثناء)
-</button>
 
 <div id="adjustFuelModal" class="modal">
     <div class="modal-content">
@@ -203,7 +194,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn-save-fuel" style="background: #e67e22;">تنفيذ التعديل الرسمي</button>
+                <button type="submit" class="btn-save-fuel" style="background:var(--rank-dark-blue)">تنفيذ التعديل الرسمي</button>
             </div>
         </form>
     </div>

@@ -27,7 +27,7 @@ class Employee(models.Model):
 # 3️⃣ المركبة
 class Vehicle(models.Model):
     OWNERSHIP_CHOICES = [('company', 'ملكية المؤسسة'), ('private', 'ملك خاص')]
-    STATUS_CHOICES = [('active', 'نشطة'), ('inactive', 'غير نشطة')]
+    STATUS_CHOICES = [('active', 'نشطة'), ('inactive', 'غير نشطة') , ('under_repair', 'تحت الصيانة')]
 
     plate_number = models.CharField(max_length=50, unique=True, verbose_name="رقم اللوحة")
     model = models.CharField(max_length=100, verbose_name="الموديل")
@@ -75,6 +75,8 @@ class FuelTransaction(models.Model):
     transaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='issue')
     date = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ العملية")
     notes = models.TextField(blank=True, null=True)
+
+
 
 # 7️⃣ الحوادث
 class Accident(models.Model):

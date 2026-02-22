@@ -59,13 +59,13 @@
                         <p>تم صرف حصة قدرها: <strong>{{ trip.fuel_transaction.quantity }} لتر</strong></p>
                         <small>كود المعاملة: #{{ trip.fuel_transaction.id }} | التاريخ: {{ trip.fuel_transaction.date|date:"Y-m-d" }}</small>
                     </div>
-                    <a href="#" class="btn-search" style="border: 1px solid #f39c12; color: #f39c12;">تفاصيل السند</a>
+                    <label  class="btn-search" style="border: 1px solid #f39c12; color: #f39c12;">تفاصيل السند</label>
                 </div>
                 {% else %}
                 <div style="text-align: center; padding: 10px;">
                     <p class="text-muted">لا توجد عملية وقود مسجلة لهذه الرحلة.</p>
                     {% if not trip.end_date %}
-                    <button class="btn-primary" style="background: #f39c12; font-size: 13px;">تسجيل صرف يدوي</button>
+                    <a href="{% url 'fuel_log_list' %}" class="btn-primary" style="background: #f39c12; font-size: 13px;">تسجيل صرف يدوي</a>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -75,7 +75,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 class="modal-section-title" style="color:#e74c3c; margin:0;"><i class="fas fa-car-crash"></i> سجل الحوادث</h3>
                     {% if not trip.end_date %}
-                    <button class="btn-primary" style="background:#e74c3c; padding: 5px 12px; font-size: 12px;">تبليغ عن حادث</button>
+                    <a href="{% url 'accident_list' %}" class="btn-primary" style="background:#e74c3c; padding: 5px 12px; font-size: 12px;">تبليغ عن حادث</a>
                     {% endif %}
                 </div>
                 <table class="main-table">

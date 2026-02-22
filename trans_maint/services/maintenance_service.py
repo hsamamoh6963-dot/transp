@@ -21,7 +21,7 @@ class MaintenanceService:
             
             # 2. تغيير حالة المركبة لضمان عدم استخدامها (Safety Lock)
             # حتى لو كانت active، نحولها لـ inactive أو نعتمد على وجود طلب pending
-            vehicle.status = 'inactive'
+            vehicle.status = 'under_repair'
             vehicle.save()
             
             return request

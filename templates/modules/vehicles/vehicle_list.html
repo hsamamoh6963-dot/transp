@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/fuel_style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vehicles.css' %}">
     <style>
         /* إضافة لمسات خاصة بصفحة المركبات لتشبه لوحة الصيانة */
         .status-indicator.active { background-color: #2ecc71; }
@@ -45,6 +45,7 @@
                     <option value="active" {% if request.GET.status == 'active' or not request.GET.status %}selected{% endif %}>المركبات النشطة فقط</option>
                     
                     <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>المركبات غير النشطة</option>
+                    <option value="under_repair" {% if request.GET.status == 'under_repair' %}selected{% endif %}>المركبات تحت الصيانة</option>
                     
                    
                 </select>
@@ -70,7 +71,7 @@
                     <th>رقم اللوحة</th>
                     <th>نوع الملكية</th>
                     <th>المالك/المسؤول</th>
-                    <th>السعة</th>
+                    <th>النوع</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
                 </tr>
@@ -85,7 +86,7 @@
                         </span>
                     </td>
                     <td>{{ veh.owner.name|default:"المؤسسة" }}</td>
-                    <td>{{ veh.model }} نموذج السيارة </td>
+                    <td>{{ veh.model }}   </td>
                     <td>
                         <span class="status-pill {{ veh.status }}">
                             <span class="status-indicator {{ veh.status }}"></span>
@@ -165,7 +166,7 @@
                     <select name="status" id="m_status">
                         <option value="active">نشطة</option>
                         <option value="inactive">غير نشطة</option>
-                        <option value="maintenance">تحت الصيانة</option>
+                        <option value="under_repair">تحت الصيانة</option>
                     </select>
                 </div>
             </div>

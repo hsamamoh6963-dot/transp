@@ -216,3 +216,32 @@
     align-items: center;
     backdrop-filter: blur(4px); /* إضافة لمسة جمالية خلف المودال */
 }
+.modal-header {
+    background: var(--rank-dark-blue);
+    color: white;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+    display: flex;             /* أضف هذا */
+    justify-content: space-between; /* أضف هذا */
+    align-items: center;       /* أضف هذا */
+}
+
+.close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: var(--rank-gold);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between; /* هذا السطر هو المسؤول عن دفع الزر للجانب الآخر */
+    align-items: center;            /* لضمان محاذاة النص والزر عمودياً */
+    margin-bottom: 25px;
+    width: 100%;                    /* لضمان استغلال كامل عرض الحاوية */
+}
+

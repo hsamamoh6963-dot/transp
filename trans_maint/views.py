@@ -143,11 +143,11 @@ class EmployeeDetailView(View):
         employee = EmployeeService.get_employee(pk)
         
         # 2. بيانات المحفظة المالية (Fuel Service)
-        balance = FuelService.calculate_employee_balance(pk)
-        total_consumption = EmployeeService.get_employee_total_consumption(pk)
+        balance = FuelService.calculate_employee_balance(employee.id)
+        total_consumption = EmployeeService.get_employee_total_consumption(employee.id)
         
         # 3. بيانات الحركة والمخاطر (Trip & Accident Services)
-        trips = TripService.list_trips({'employee_id': pk})
+        trips = TripService.list_trips({'employee_id': employee.id})
         # نفترض وجود خدمة للحوادث تم بناؤها سابقاً
         # accidents = AccidentService.get_vehicle_accident_history(...) 
 
@@ -157,8 +157,8 @@ class EmployeeDetailView(View):
             'balance': balance,
             'total_consumption': total_consumption,
             'trips': trips,
-            'effective_weekly': EmployeeService.get_effective_weekly_quota(pk),
-            'effective_monthly': EmployeeService.get_effective_monthly_quota(pk),
+            'effective_weekly': EmployeeService.get_effective_weekly_quota(employee.id),
+            'effective_monthly': EmployeeService.get_effective_monthly_quota(employee.id),
         }
         return render(request, self.template_name, context)
     
@@ -177,42 +177,6 @@ class EmployeeDetailView(View):
             messages.error(request, f"خطأ: {str(e)}")
         
         return redirect('employee_detail', pk=pk)
-
-# 3️⃣ Employee Create View - إدارة الحصص والاستثناءات
-# class EmployeeCreateView(View):
-#     template_name = 'modulesemployees/employee_form.html'
-
-#     def get(self, request):
-#         context = {'ranks': RankService.list_ranks()}
-#         return render(request, self.template_name, context)
-
-#     def post(self, request):
-#         # قراءة البيانات وتحويل الحقول الفارغة لـ None لتفعيل منطق الـ Override
-#         data = {
-#             'name': request.POST.get('name'),
-#             'military_id': request.POST.get('military_id'),
-#             'rank_id': request.POST.get('rank'),
-#             'weekly_quota_override': request.POST.get('weekly_override') or None,
-#             'monthly_quota_override': request.POST.get('monthly_override') or None,
-#         }
-        
-#         try:
-#             EmployeeService.create_employee(data)
-#             messages.success(request, "تم تسجيل الموظف بنجاح.")
-#             return redirect('employee_list')
-#         except Exception as e:
-#             messages.error(request, f"خطأ في الإدخال: {str(e)}")
-#             return self.get(request)
-
-# # 4️⃣ Employee Deactivate View - التعطيل بدل الحذف
-# class EmployeeDeactivateView(View):
-#     def post(self, request, pk):
-#         try:
-#             EmployeeService.deactivate_employee(pk)
-#             messages.warning(request, "تم تعطيل حساب الموظف بنجاح.")
-#         except Exception as e:
-#             messages.error(request, f"فشلت العملية: {str(e)}")
-#         return redirect('employee_list')
 
 
 #===============================================================
@@ -248,7 +212,7 @@ class VehicleListView(View):
         
         context = {
             'vehicles': vehicles,
-            'status_options': ['active', 'inactive',],
+            'status_options': ['active', 'inactive', 'under_repair'],
             'employees': EmployeeService.list_employees({'is_active': True}),
         }
         return render(request, self.template_name, context)
@@ -259,6 +223,13 @@ class VehicleListView(View):
         action = request.POST.get('action') # 'save' أو 'deactivate'
 
         try:
+            if vehicle_id:
+                vehicle = VehicleService.get_vehicle(vehicle_id)
+                # قيد أمني: إذا كانت السيارة تحت الصيانة، لا يمكن تغيير حالتها يدوياً من هنا
+                if vehicle.status == 'under_repair' and action == 'deactivate':
+                    messages.error(request, "لا يمكن تعطيل مركبة وهي قيد الإصلاح في الورشة.")
+                    return redirect('vehicle_list')
+                
             if action == 'deactivate':
                 VehicleService.update_vehicle(vehicle_id, {'status': 'inactive'})
                 messages.warning(request, "تم إخراج المركبة من الخدمة.")
@@ -270,6 +241,10 @@ class VehicleListView(View):
                     'status': request.POST.get('status'),
                     'owner_id': request.POST.get('owner'),
                 }
+                if data['status'] == 'under_repair' and (not vehicle_id or vehicle.status != 'under_repair'):
+                    messages.error(request, "حالة 'تحت الصيانة' يتم تعيينها تلقائياً من قسم الورش أو الحوادث فقط.")
+                    return redirect('vehicle_list')
+                
                 if vehicle_id: # تحديث
                     VehicleService.update_vehicle(vehicle_id, data)
                     messages.success(request, "تم تحديث بيانات المركبة بنجاح.")
@@ -303,8 +278,26 @@ class VehicleDetailView(View):
             'recent_trips': vehicle.trips.select_related('employee').all().order_by('-start_date')[:5],
             'recent_maintenance': vehicle.maintenancerequest_set.all().order_by('-date_reported')[:5],
             'recent_accidents': vehicle.accident_set.all().order_by('-date_occurred')[:5],
-        }
+        }   
         return render(request, self.template_name, context)
+    
+    def post(self, request, pk):
+        action = request.POST.get('action')
+        vehicle = VehicleService.get_vehicle(pk)
+        
+        try:
+            if action == 'activate':
+                vehicle.status = 'active'
+                vehicle.save()
+                messages.success(request, f"تم إعادة تنشيط المركبة {vehicle.plate_number} بنجاح.")
+            elif action == 'deactivate':
+                vehicle.status = 'inactive'
+                vehicle.save()
+                messages.warning(request, f"تم إيقاف تنشيط المركبة {vehicle.plate_number}.")
+        except Exception as e:
+            messages.error(request, f"حدث خطأ: {str(e)}")
+            
+        return redirect('vehicle_detail', pk=pk)
     
 
 #===============================================================
@@ -346,32 +339,42 @@ class TripListView(View): # الاسم الجديد المقترح للـ TripLi
         
         try:
             if action == 'create':
-                # منطق TripCreateView القديم
+                # 1. جلب الـ IDs من الفورم
+                vehicle_id = request.POST.get('vehicle')
+                employee_id = request.POST.get('employee')
+
+                # 2. تحويل الـ IDs إلى كائنات (Objects) حقيقية
+                # هذا ما تحتاجه السيرفس لكي لا يظهر خطأ 'NoneType'
+                from .models import Vehicle, Employee
+                vehicle_obj = get_object_or_404(Vehicle, id=vehicle_id)
+                employee_obj = get_object_or_404(Employee, id=employee_id)
+
+                # 3. تجهيز البيانات وتمرير الكائنات بدلاً من الـ IDs
                 data = {
-                    'vehicle_id': request.POST.get('vehicle'),
-                    'employee_id': request.POST.get('employee'),
+                    'vehicle': vehicle_obj,    # نمرر الكائن نفسه
+                    'employee': employee_obj,  # نمرر الكائن نفسه
                     'area': request.POST.get('area'),
                     'trip_type': request.POST.get('trip_type'),
-                    'fuel_quota_granted': float(request.POST.get('fuel_quota', 0)),
+                    'fuel_quota_granted': float(request.POST.get('fuel_quota', 0) or 0),
                     'start_date': timezone.now(),
                 }
+
+                # استدعاء السيرفس الآن سيعمل لأنها ستجد vehicle.id و employee.id
                 TripService.create_trip_with_quota(data)
                 messages.success(request, "تم بدء الرحلة بنجاح.")
 
             elif action == 'close':
-                # منطق TripCloseView القديم
                 trip_id = request.POST.get('trip_id')
                 TripService.end_trip(trip_id)
-                messages.success(request, "تم إغلاق الرحلة وإعادة المركبة للأسطول.")
-
+                messages.success(request, "تم إغلاق الرحلة.")
 
         except Exception as e:
             messages.error(request, f"حدث خطأ: {str(e)}")
 
         return redirect('trip_list')
+    
+
 # 4️⃣ Trip Detail View - العرض الشامل للرحلة
-
-
 class TripDetailView(View):
     template_name = 'modules/trip/trip_detail.html'
 
@@ -657,10 +660,10 @@ class MaintenanceDashboardView(View):
         context = {
             'requests': maintenance_requests,
             'workshops': workshops,
-            'vehicles': VehicleService.list_vehicles({'status': 'active'}),
+            'vehicles': Vehicle.objects.filter(status__in=['active', 'under_repair']),
             'total_maintenance_cost': MaintenanceService.get_total_maintenance_cost(), # استدعاء الخدمة المكتوبة
             'stats': {
-                        'inactive_vehicles': Vehicle.objects.filter(status='inactive').count(),
+                        'inactive_vehicles': Vehicle.objects.filter(status__in=['inactive', 'under_repair']).count(),
                     }
         }
         return render(request, self.template_name, context)
