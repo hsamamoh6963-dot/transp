@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # تجميع الملفات الثابتة (Static Files)
-RUN python manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput --clear
 
 # فتح المنفذ (Koyeb يستخدم 8000 افتراضياً)
 EXPOSE 8000

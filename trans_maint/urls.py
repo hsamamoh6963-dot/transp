@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from .views import (
      RankListView, 
@@ -17,6 +18,7 @@ from .views import (
 
 )
 urlpatterns = [
+    path('', RedirectView.as_view(url='dashboard/', permanent=True)),
     #===============================================================
     #  urls for Rank Management - عرض، إضافة، تعديل، حذف الرتب العسكرية
     path('ranks/', RankListView.as_view(), name='rank_list'),
