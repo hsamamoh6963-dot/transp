@@ -13,10 +13,10 @@
 <div class="fuel-container">
     
     <div class="section-header">
-        <h2>إدارة حركة الرحلات</h2>
+        <h2>إدارة حركة الماموريات</h2>
         <div class="actions">
             <button class="btn-primary" onclick="openModal('tripCreateModal')">
-                <i class="fas fa-plus"></i> رحلة جديدة
+                <i class="fas fa-plus"></i> مامورية جديدة
             </button>
         </div>
     </div>
@@ -24,11 +24,11 @@
     <div class="summary-strip">
         <div class="mini-stat">
             <i class="fas fa-clock"></i>
-            <div><p>رحلات مفتوحة</p><h4>{{ trips.count }}</h4></div>
+            <div><p>ماموريات مفتوحة</p><h4>{{ trips.count }}</h4></div>
         </div>
         <div class="mini-stat" style="border-right-color: #27ae60;">
             <i class="fas fa-calendar-check" style="color: #27ae60;"></i>
-            <div><p>رحلات هذا الشهر</p><h4>{{ monthly_count|default:"0" }}</h4></div>
+            <div><p>ماموريات هذا الشهر</p><h4>{{ monthly_count|default:"0" }}</h4></div>
         </div>
         <div class="mini-stat" style="border-right-color: #f1c40f;">
             <i class="fas fa-gas-pump" style="color: #f1c40f;"></i>
@@ -43,8 +43,8 @@
     <div class="data-card" style="margin-bottom: 20px; padding: 15px;">
         <form method="GET" class="inline-filter">
             <select name="status">
-                <option value="active" {% if request.GET.status == 'active' or not request.GET.status %}selected{% endif %}>🔵 الرحلات المفتوحة</option>
-                <option value="closed" {% if request.GET.status == 'closed' %}selected{% endif %}>🟢 الرحلات المغلقة</option>
+                <option value="active" {% if request.GET.status == 'active' or not request.GET.status %}selected{% endif %}>🔵 الماموريات المفتوحة</option>
+                <option value="closed" {% if request.GET.status == 'closed' %}selected{% endif %}>🟢 الماموريات المغلقة</option>
                 <option value="all" {% if request.GET.status == 'all' %}selected{% endif %}>كل السجلات</option>
             </select>
             <select name="employee">
@@ -94,11 +94,11 @@
                             <a href="{% url 'trip_detail' trip.id %}" class="btn-search" title="عرض التفاصيل"><i class="fas fa-eye"></i></a>
                             
                             {% if not trip.end_date %}
-                            <form method="POST" style="display:inline;" onsubmit="return confirm('هل تريد إغلاق الرحلة وتحرير المركبة؟');">
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('هل تريد إغلاق المامورية وتحرير المركبة؟');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="close">
                                 <input type="hidden" name="trip_id" value="{{ trip.id }}">
-                                <button type="submit" class="btn-search" style="background:#27ae60" title="إغلاق الرحلة">
+                                <button type="submit" class="btn-search" style="background:#27ae60" title="إغلاق المامورية">
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                             </form>
@@ -107,7 +107,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" style="text-align:center; padding:30px;">لا توجد رحلات مطابقة للبحث.</td></tr>
+                <tr><td colspan="8" style="text-align:center; padding:30px;">لا توجد ماموريات مطابقة للبحث.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -117,7 +117,7 @@
 <div id="tripCreateModal" class="modal">
     <div class="modal-content" style="max-width: 650px;">
         <div class="modal-header">
-            <h3><i class="fas fa-route"></i> تسجيل رحلة عمل جديدة</h3>
+            <h3><i class="fas fa-route"></i> تسجيل مامورية عمل جديدة</h3>
             <span class="close" onclick="closeModal('tripCreateModal')">&times;</span>
         </div>
         <form method="POST">
@@ -169,18 +169,18 @@
                     <label>الكمية الممنوحة (لتر)</label>
                     <input type="number" step="0.1" name="fuel_quota" value="0.0" required>
                     <div class="form-notice">
-                        <i class="fas fa-exclamation-triangle"></i> سيتم إنشاء عملية صرف وقود تلقائية بهذا المقدار فور بدء الرحلة.
+                        <i class="fas fa-exclamation-triangle"></i> سيتم إنشاء عملية صرف وقود تلقائية بهذا المقدار فور بدء المامورية.
                     </div>
                 </div>
 
                 <div class="form-group full-width">
                     <label>ملاحظات إضافية</label>
-                    <textarea name="notes" rows="2" placeholder="أي تفاصيل إضافية عن الرحلة..."></textarea>
+                    <textarea name="notes" rows="2" placeholder="أي تفاصيل إضافية عن المامورية..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('tripCreateModal')">إلغاء</button>
-                <button type="submit" class="btn-save-trip">ابدأ الرحلة واصرف الحصة</button>
+                <button type="submit" class="btn-save-trip">ابدأ المامورية واصرف الحصة</button>
             </div>
         </form>
     </div>

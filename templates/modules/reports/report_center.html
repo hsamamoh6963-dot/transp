@@ -3,6 +3,27 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+    <style>
+        /* تحسين العرض على الهاتف */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 1rem;
+        }
+        .modern-table {
+            min-width: 800px; /* يمنع الجدول من الانضغاط الزائد */
+        }
+        @media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .btn-generate, .btn-clear {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
 {% endblock %}
 
 
@@ -92,13 +113,18 @@
                     {% elif request.GET.report_type == 'accidents' %}
                         <tr><th>إجمالي الحوادث</th><th>إجمالي الخسائر</th><th>متوسط تكلفة الحادث</th></tr>
                     {% elif request.GET.report_type == 'maintenance' %}
-                        <tr><th>المركبة</th><th>الورشة</th><th>تاريخ الدخول</th><th>تنبيه</th></tr>
+                        <tr><th>المركبة</th>
+                            <th>الورشة</th>
+                            <th>تاريخ الإبلاغ</th>
+                            <th>تاريخ الإكمال</th>
+                            <th>الحالة</th>
+                        </tr>
                     {% elif request.GET.report_type == 'over_consumption' %}
                         <tr><th>الموظف</th><th>نسبة الاستهلاك</th><th>الرصيد المتبقي</th></tr>
                     {% elif request.GET.report_type == 'unused_quota' %}
                         <tr><th>الموظف</th><th>الرتبة</th><th>آخر نشاط</th></tr>
                     {% elif request.GET.report_type == 'trips' %}
-                        <tr><th>إجمالي الرحلات</th><th>متوسط الرحلات/مركبة</th><th>الوجهات الأكثر تردداً</th></tr>
+                        <tr><th>إجمالي الماموريات</th><th>متوسط الماموريات/مركبة</th><th>الوجهات الأكثر تردداً</th></tr>
                     {% endif %}
                 </thead>
                 <tbody>
@@ -112,26 +138,57 @@
                             <td>{{ item.notes|default:"-" }}</td>
                         </tr>
                         {% endfor %}
+
+                    {% elif request.GET.report_type == 'maintenance' %}
+                        {% for item in report_results %}
+                        <tr>
+                            <td class="fw-bold">{{ item.vehicle.plate_number }}</td>
+                            <td>{{ item.workshop.name }}</td>
+                            <td>{{ item.date_reported|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if item.date_completed %}
+                                    {{ item.date_completed|date:"Y-m-d" }}
+                                {% else %}
+                                    <span class="text-muted">لم يكتمل</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">قيد الإصلاح</span>
+                                {% else %}
+                                    <span class="badge bg-success">مكتمل</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
                     {% elif request.GET.report_type == 'accidents' %}
                         <tr>
-                            <td>{{ report_results.accident_count }} حادث</td>
-                            <td class="text-danger fw-bold">{{ report_results.total_cost|default:"0.00" }} ر.س</td>
+                            <td>{{ report_results.accident_count|default:"0" }} حادث</td>
+                            <td class="text-danger fw-bold">{{ report_results.total_cost|default:"0.00" }} ج.س</td>
                             <td>
-                                {% if report_results.accident_count > 0 %}
-                                    {% widthratio report_results.total_cost 1 report_results.accident_count %} ر.س
+                                {% if report_results.accident_count and report_results.accident_count > 0 %}
+                                    {{ report_results.total_cost|default:0 }} 
                                 {% else %}
-                                    0.00 ر.س
+                                    0.00
                                 {% endif %}
-                             </td>
+                            </td>
                         </tr>
                     {% elif request.GET.report_type == 'trips' %}
                         <tr>
-                            <td class="fs-5">{{ report_results.total_trips }} رحلة</td>
+                            <td class="fs-5">{{ report_results.total_trips }} مامورية</td>
                             <td class="fs-5">{{ report_results.avg_trips_per_vehicle|floatformat:1 }}</td>
-                            <td>
-                                {% for dest in report_results.top_destinations %}
-                                <span class="badge bg-light text-dark border">{{ dest.area }} ({{ dest.count }})</span>
-                                {% endfor %}
+                            <td class="destinations-cell">
+                                <div class="destinations-grid">
+                                    {% for dest in report_results.top_destinations %}
+                                        <div class="destination-item">
+                                            <span class="dest-name">{{ dest.area|default:"غير محدد" }}</span>
+                                            <span class="dest-count">{{ dest.count }}</span>
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted small">لا توجد بيانات وجهات</span>
+                                    {% endfor %}
+                                </div>
                             </td>
                         </tr>
                     {% elif request.GET.report_type == 'over_consumption' %}
@@ -149,18 +206,30 @@
                         {% endfor %}
                     {% endif %}
 
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+                    
                 </tbody>
             </table>
         </div>
         
-        {% if report_results.has_other_pages %}
-        <div class="pagination-wrapper">
-             <a href="?page={{ report_results.previous_page_number }}&{{ request.GET.urlencode }}" class="{% if not report_results.has_previous %}disabled{% endif %}">السابق</a>
-             <span>صفحة {{ report_results.number }} من {{ report_results.paginator.num_pages }}</span>
-             <a href="?page={{ report_results.next_page_number }}&{{ request.GET.urlencode }}" class="{% if not report_results.has_next %}disabled{% endif %}">التالي</a>
-        </div>
-        {% endif %}
+        {% if is_paginated and report_results.has_other_pages %}
+            <div class="pagination-wrapper mt-4 d-flex justify-content-center align-items-center gap-3">
+                {% if report_results.has_previous %}
+                    <a href="?page={{ report_results.previous_page_number }}&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right"></i> السابق
+                    </a>
+                {% endif %}
+
+                <span class="px-3 py-1 bg-light border rounded">
+                    صفحة {{ report_results.number }} من {{ report_results.paginator.num_pages }}
+                </span>
+
+                {% if report_results.has_next %}
+                    <a href="?page={{ report_results.next_page_number }}&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-primary">
+                        التالي <i class="fas fa-arrow-left"></i>
+                    </a>
+                {% endif %}
+            </div>
+{% endif %}
     </div>
     {% else %}
     <div class="empty-state-card shadow-sm">

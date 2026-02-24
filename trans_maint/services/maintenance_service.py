@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from django.db import transaction
 from ..models import MaintenanceRequest, Vehicle
+from django.utils import timezone
 
 class MaintenanceService:
 
@@ -36,6 +37,7 @@ class MaintenanceService:
         with transaction.atomic():
             request.status = 'completed'
             request.cost = actual_cost
+            request.date_completed = timezone.now().date()
             request.save()
             
             # إعادة تفعيل المركبة (فتح القفل) لتصبح متاحة للـ Trip Service

@@ -55,7 +55,7 @@ class Trip(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="trips")
     trip_type = models.CharField(max_length=100, verbose_name="نوع الرحلة")
     area = models.CharField(max_length=255, null=True, blank=True, verbose_name="المنطقة/الجهة")
-    start_date = models.DateTimeField(verbose_name="تاريخ ووقت البدء")
+    start_date = models.DateTimeField(verbose_name="تاريخ ووقت البدء" , db_index=True)
     end_date = models.DateTimeField(blank=True, null=True, verbose_name="تاريخ ووقت العودة")
     fuel_quota_granted = models.FloatField(default=0.0, verbose_name="الكمية الممنوحة للرحلة")
 
@@ -73,7 +73,7 @@ class FuelTransaction(models.Model):
     
     quantity = models.FloatField(verbose_name="الكمية")
     transaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='issue')
-    date = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ العملية")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ العملية", db_index=True)
     notes = models.TextField(blank=True, null=True)
 
 
@@ -84,10 +84,10 @@ class Accident(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT)
     trip = models.ForeignKey(Trip, on_delete=models.SET_NULL, null=True, blank=True)
     
-    date_occurred = models.DateTimeField(verbose_name="تاريخ وقوع الحادث")
+    date_occurred = models.DateTimeField(verbose_name="تاريخ وقوع الحادث", db_index=True)
     description = models.TextField(verbose_name="وصف الحادث")
-    damage_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="تكلفة الإصلاح")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    damage_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="تكلفة الإصلاح")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open' , db_index=True)
 
 # 8️⃣ طلب الصيانة
 class MaintenanceRequest(models.Model):
@@ -99,5 +99,6 @@ class MaintenanceRequest(models.Model):
     
     reason = models.TextField(verbose_name="سبب الصيانة")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    date_reported = models.DateField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    date_reported = models.DateField(auto_now_add=True ,db_index=True, verbose_name="تاريخ الإبلاغ")
+    date_completed = models.DateField(null=True, blank=True, verbose_name="تاريخ الإكمال")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending' , db_index=True)

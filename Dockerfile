@@ -31,3 +31,6 @@ EXPOSE 8000
 # السطر الأخير في ملف الـ Dockerfile الخاص بك
 CMD python manage.py migrate && \
     gunicorn --bind 0.0.0.0:8000 core.wsgi:application
+
+
+

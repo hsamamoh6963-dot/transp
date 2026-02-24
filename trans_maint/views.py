@@ -4,12 +4,13 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.db.models import Sum ,F, ExpressionWrapper, FloatField
+from django.db.models import Count, Sum ,F, ExpressionWrapper, FloatField ,Q
 from django.db import models
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.db.models import QuerySet
 
-from .models import Vehicle ,Trip 
+from .models import Vehicle ,Trip, Workshop 
  
 
 
@@ -654,9 +655,13 @@ class MaintenanceDashboardView(View):
         
         # فلترة الورش حسب "ضغط العمل" (عدد السيارات الحالية)
         # ملاحظة: يتم هذا الجزء عبر annotate في الـ Service لضمان الأداء
-        if request.GET.get('min_cars'):
-            workshops = workshops.filter(current_jobs_count__gte=request.GET.get('min_cars'))
-
+        workshops = Workshop.objects.annotate(
+        current_jobs_count=Count(
+            'maintenancerequest', 
+            filter=Q(maintenancerequest__status='pending')
+        )
+    )
+            
         context = {
             'requests': maintenance_requests,
             'workshops': workshops,
@@ -887,6 +892,7 @@ class MainReportView(View):
                 ('trips', 'تقرير النشاط الميداني (الرحلات)'),
                 ('accidents', 'تقرير خسائر الحوادث'),
                 ('maintenance', 'تقرير تكاليف الصيانة'),
+                ('unused_quota', 'حصص غير مستخدمة'),
             ]
         }
         
@@ -924,7 +930,7 @@ class MainReportView(View):
 
         elif report_type == 'maintenance':
             # تقرير الصيانة المفتوحة لا يحتاج نطاق زمني عادة لكننا سنلتزم بالفلترة
-            results = ReportService.AssetReports.get_open_maintenance_report()
+            results = ReportService.AssetReports.get_open_maintenance_report(start_date, end_date)
             context['report_title'] = "سجل المركبات قيد الإصلاح حالياً"
 
         elif report_type == 'over_consumption':
@@ -937,12 +943,18 @@ class MainReportView(View):
 
 
         # 3️⃣ معالجة العرض والتصفح (Pagination)
-        if results and hasattr(results, '__iter__'): # إذا كانت النتائج قائمة (QuerySet)
-            paginator = Paginator(results, 20) # 20 سجل في الصفحة لمنع التجمد
+        if isinstance(results, QuerySet):
+            # حل مشكلة UnorderedObjectListWarning بإضافة ترتيب افتراضي
+            results = results.order_by('-id') 
+            
+            paginator = Paginator(results, 15)
             page_number = request.GET.get('page')
             context['report_results'] = paginator.get_page(page_number)
+            context['is_queryset'] = True # علامة للـ HTML لتشغيل حلقة for
         else:
-            context['report_results'] = results # للنتائج التي تأتي كـ Dict (إحصائيات)
+            # إذا كانت النتائج Dict (مثل تقارير trips و accidents) أو List مخصصة
+            context['report_results'] = results
+            context['is_queryset'] = False # علامة للـ HTML لعرض الإحصائيات مباشرة
 
         context['filtered'] = True
         return render(request, self.template_name, context)

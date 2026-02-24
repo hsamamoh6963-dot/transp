@@ -13,3 +13,9 @@ if not User.objects.filter(username='admin').exists():
     print("Admin user created successfully!")
 else:
     print("Admin user already exists.")
+
+
+
+
+
+ 

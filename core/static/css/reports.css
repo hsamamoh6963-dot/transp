@@ -306,3 +306,45 @@
         display: none !important;
     }
 }
+
+/* حاوية الوجهات */
+.destinations-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 400px; /* لمنع تمدد الجدول عرضياً */
+}
+
+/* بطاقة الوجهة الواحدة */
+.destination-item {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.destination-item:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+}
+
+/* اسم المنطقة */
+.dest-name {
+    padding: 4px 10px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* عداد الرحلات (الجزء الملون) */
+.dest-count {
+    background: #0d6efd;
+    color: white;
+    padding: 4px 8px;
+    font-weight: bold;
+    min-width: 25px;
+    text-align: center;
+}
